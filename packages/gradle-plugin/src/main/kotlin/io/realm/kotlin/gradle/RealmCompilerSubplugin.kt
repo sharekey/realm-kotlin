@@ -25,10 +25,9 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 class RealmCompilerSubplugin : KotlinCompilerPluginSupportPlugin {
 
     companion object {
-        // TODO LATER Consider embedding these from the build.gradle's versionConstants task just
-        //  as with the version. But leave it for now as they should be quite stable.
-        // Modules has to match ${project.group}:${project.name} to make composite build work
-        const val groupId = "io.realm.kotlin"
+        // Group/version are generated from the publication to keep consumer artifact selection aligned.
+        // Artifact IDs must match project names for composite builds.
+        const val groupId = PLUGIN_GROUP
         const val artifactId = "plugin-compiler"
         const val version = PLUGIN_VERSION
 

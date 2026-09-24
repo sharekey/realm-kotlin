@@ -117,6 +117,10 @@ published packages and verify plugin/application wiring. After local publication
 fixture and inspect/run its `assemble` task with its own wrapper and configured repository path.
 Examples and benchmarks are consumers too; they are not included by SDK `test-base` tasks.
 
+The additional [Sharekey workflow](../../.github/workflows/sharekey.yml) runs static-analysis and
+Gradle plugin validation for `community` pushes and pull requests. It reuses the workflow below and
+does not replace the inherited matrix. These checks do not provide native-runtime or release coverage.
+
 The inherited entry point is [`.github/workflows/pr.yml`](../../.github/workflows/pr.yml), with reusable
 static-analysis/integration workflows. Its intended flow builds per-platform artifacts, assembles a
 local Maven repository and runs tests against those artifacts. The migrated static-analysis jobs

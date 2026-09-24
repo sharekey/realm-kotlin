@@ -13,6 +13,7 @@ upstream documentation disagrees with them.
 5. [Fork maintenance](fork-maintenance.md): branches, compatibility work, publication and app adoption.
 6. [Sharekey integration](sharekey-integration.md): actual mobile model/toolchain contract, ownership
    boundaries and the checks needed before switching the app.
+7. [Publishing](publishing.md): Sharekey coordinates, staging, signing and release prerequisites.
 
 [AGENTS.md](../../AGENTS.md) is the short operating guide for automated contributors.
 
@@ -22,11 +23,11 @@ upstream documentation disagrees with them.
 | --- | --- |
 | Fork | `sharekey/realm-kotlin` |
 | Upstream base | `community` / `28182c37` |
-| SDK / Maven group | `3.0.0-sharekey.1-SNAPSHOT` / `io.realm.kotlin` |
+| SDK / Maven group | `3.0.0-sharekey.1` / `com.sharekey.realm.kotlin` (unpublished candidate) |
 | Kotlin / JVM bytecode target | `2.2.10` / `17` |
 | Gradle / Android Gradle Plugin | `8.14.3` / `8.10.0` |
 | Realm Core gitlink | `d8a68400288245c01be3dcb0ca3bcd4922fee680` (20.0.1) |
-| Local `origin/HEAD` at inspection | `origin/main`, not the maintenance baseline |
+| GitHub default branch | `community` (verified on 2026-09-24); local `origin/HEAD` can be stale |
 
 Version sources: [Config.kt](../../buildSrc/src/main/kotlin/Config.kt),
 [SDK wrapper](../../packages/gradle/wrapper/gradle-wrapper.properties), and the Git submodule entry.
@@ -34,7 +35,8 @@ Do not read these SDK versions as the versions of the consuming mobile app.
 
 `community` is the appropriate base for Sharekey's local database usage. It contains the removal of
 Atlas Sync and the 3.0.0 release. Sharekey's Kotlin 2.2.10 adaptation is developed on top of that
-baseline. Publication coordinates and the legacy release workflows still need separate fork setup.
+baseline. Own publication coordinates are configured. Remote Maven distribution still requires
+registry setup; see [publishing](publishing.md).
 
 ## Evidence and maintenance status
 

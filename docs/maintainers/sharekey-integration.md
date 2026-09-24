@@ -1,8 +1,8 @@
 # Sharekey mobile integration
 
 Observed **2026-09-24**. Inline paths below refer to the separate `sharekey/mobile` repository;
-relative links refer to this SDK repository. This records the Android consumer contract, not an
-application dependency switch or proof of shared-file compatibility.
+relative links refer to this SDK repository. This records the Android consumer contract and adoption status. A reported manual app test
+is not an enumerated record of every shared-file scenario below.
 
 ## Toolchains and dependencies
 
@@ -20,8 +20,10 @@ Keep the SDK's build toolchain independent; validate the app's consumer combinat
 changing every SDK tool version to match it. The isolated consumer checks and their limits are in
 [migration validation](kotlin-2.2.10-migration.md).
 
-The app currently applies `com.infomaniak.realm.kotlin` and consumes its Gradle plugin/library-base
-3.2.9 artifacts. Its `android/app/gradle.lockfile` already resolves coroutines 1.10.2, atomicfu 0.29.0
+The app previously consumed Infomaniak 3.2.9. A local Sharekey snapshot was built and manually
+accepted by the mobile maintainer on 2026-09-24, who authorized permanent adoption. Release
+preparation now uses `com.sharekey.realm.kotlin` for both plugin and Maven group; remote publication
+remains pending. Its `android/app/gradle.lockfile` already resolves coroutines 1.10.2, atomicfu 0.29.0
 and serialization 1.9.0, matching this fork. Direct coroutines declarations still say 1.10.0;
 the resolved graph is the relevant comparison. Change plugin and runtime coordinates together during
 adoption, preserve `io.realm.kotlin` model imports, and regenerate the app's Android dependency locks.
@@ -46,7 +48,7 @@ change recreates the entire generation and resets synchronization; independent
 `deleteRealmIfMigrationNeeded` is disabled. Keep this policy in the app, outside the SDK.
 
 Realm JS 20.2.0's installed Android Core headers identify **20.1.0**
-(`node_modules/realm/prebuilds/android/arm64-v8a/include/realm/version_numbers.hpp`). The current
+(`node_modules/realm/prebuilds/android/arm64-v8a/include/realm/version_numbers.hpp`). The preceding
 Infomaniak SDK and this fork use **Core 20.0.1**. This pairing predates adoption; it is not evidence of
 either incompatibility or proven concurrent access. A Kotlin SDK/Core change does not update JS or
 Realm Swift. Review Core upgrades separately from compiler adaptation.

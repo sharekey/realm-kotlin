@@ -1,9 +1,11 @@
 # Kotlin 2.2.10 migration
 
 Work item: [M-3153](https://yt.sharekey.com/issue/M-3153).
-Baseline: upstream community `28182c37`, Realm 3.0.0. Development artifact version:
-`3.0.0-sharekey.1-SNAPSHOT`. Maven/API namespace remains `io.realm.kotlin`; no remote publication
-is part of this migration.
+Baseline: upstream community `28182c37`, Realm 3.0.0. The initial migration used local
+`io.realm.kotlin:...:3.0.0-sharekey.1-SNAPSHOT` artifacts. Subsequent release preparation uses
+`com.sharekey.realm.kotlin:...:3.0.0-sharekey.1` and plugin ID `com.sharekey.realm.kotlin`; source/API
+packages remain `io.realm.kotlin`. See [publishing status](publishing.md). The historical test counts
+below describe the initial migration and review, not a remote release.
 
 ## Toolchain
 
@@ -139,7 +141,8 @@ complete Windows/Linux release bundle. Skipping `dokkaHtmlPartial` avoids its de
 Apple platform binary; the resulting documentation JAR is not release-ready. This exclusion is
 for local consumer verification, not a release command.
 
-After republishing the same SNAPSHOT, add `--refresh-dependencies` to the consumer command. To run
+While iterating on an unpublished candidate, add `--refresh-dependencies` after republishing it.
+Once a version is published remotely, never replace it; increment the Sharekey version instead. To run
 R8 checks, use the **release** APK on the test emulator:
 
 ```sh
@@ -174,7 +177,7 @@ metadata compiled, but Apple executables/tests and Windows/Linux JNI were not va
 The historical versioned Gradle fixtures, Compose/KMM examples and benchmarks still have their
 older wrappers and scripts while sharing the upgraded `buildSrc` dependencies. They are not a
 working compatibility matrix and are excluded from default root lint gates. The inherited upstream
-CI and publishing destinations require a separate Sharekey setup before a release.
+release pipeline is not the Sharekey publication path; see [publishing](publishing.md).
 
 Application adoption still needs shared encrypted-file tests with Realm JS, lifecycle/migration
 checks against Sharekey data and the CI/release gates in [fork maintenance](fork-maintenance.md).

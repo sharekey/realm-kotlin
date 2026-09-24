@@ -17,7 +17,7 @@
 
 plugins {
     kotlin("multiplatform")
-    id("io.realm.kotlin")
+    id("com.sharekey.realm.kotlin")
 }
 
 kotlin {
@@ -43,7 +43,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("io.realm.kotlin:library-base:${Realm.version}")
+                implementation("${Realm.group}:library-base:${Realm.version}")
             }
         }
         val commonTest by getting {

@@ -1,12 +1,12 @@
 // This project can only build against local deployed artifacts
 buildscript {
     val androidGradlePluginVersion = providers.gradleProperty("androidGradlePluginVersion").getOrElse("8.10.0")
-    extra["realmVersion"] = file("${rootProject.rootDir.absolutePath}/../../buildSrc/src/main/kotlin/Config.kt")
+    val realmConfig = file("${rootProject.rootDir.absolutePath}/../../buildSrc/src/main/kotlin/Config.kt")
         .readLines()
-        .first { it.contains("const val version") }
-        .let {
-            it.substringAfter("\"").substringBefore("\"")
-        }
+    for ((key, constant) in mapOf("realmVersion" to "version", "realmGroup" to "group")) {
+        extra[key] = realmConfig.first { it.contains("const val $constant =") }
+            .substringAfter("\"").substringBefore("\"")
+    }
 
     repositories {
         maven(url = "file://${rootProject.rootDir.absolutePath}/../../packages/build/m2-buildrepo")
@@ -18,7 +18,7 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:$androidGradlePluginVersion")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.10")
-        classpath("io.realm.kotlin:gradle-plugin:${rootProject.extra["realmVersion"]}")
+        classpath("${rootProject.extra["realmGroup"]}:gradle-plugin:${rootProject.extra["realmVersion"]}")
     }
 }
 

@@ -19,10 +19,9 @@ version of the desired local-only SDK. Its Android pre-26 `currentTime()` fix at
 backported during the migration review, preserving millisecond precision. This is an example of
 selective backporting without merging the Sync history.
 
-At initial inspection, `origin` points to `sharekey/realm-kotlin`, the working branch tracks
-`origin/community`, but the local symbolic `origin/HEAD` points to `origin/main`. That symbolic ref
-does not choose the checked-out branch. Setting the GitHub default to `community` is a separate
-repository-setting action; it was not performed by the documentation change.
+The GitHub default branch is `community`, verified on 2026-09-24. The local symbolic
+`origin/HEAD` pointed to `origin/main` at initial inspection and can remain stale; it does not select
+the checked-out branch. No GitHub default-branch setting was changed by this work.
 
 Develop focused changes from `community` and retain original upstream commit provenance. An
 `upstream` remote for `realm/realm-kotlin` and an explicitly named Infomaniak reference remote may be
@@ -33,8 +32,8 @@ useful when importing patches. Neither was configured by this documentation pass
 | Source | Role |
 | --- | --- |
 | Sharekey development checkout | Community 3.0.0 baseline adapted to Kotlin 2.2.10; original Gradle layout |
-| Infomaniak Maven 3.2.9 | Current native Android SDK in Sharekey mobile, compatible with Kotlin 2.2.10 |
-| Future Sharekey artifact | Controlled publication after reviewed adaptation and validation |
+| Infomaniak Maven 3.2.9 | Previously shipped native Android SDK, compatible with Kotlin 2.2.10 |
+| Sharekey release candidate | Own coordinates and local artifacts; remote publication still pending |
 
 The mobile app uses RN 0.87.1, Kotlin 2.2.10, AGP 9.2.1 and Gradle 9.4.1 at the audit date.
 Those are **consumer** versions. The SDK has its own build toolchain. Establish and document both
@@ -83,8 +82,8 @@ compatibility rather than presenting these as confirmed app incidents.
 
 ## Publication contract
 
-Keep `io.realm.kotlin` model/API packages. Assign Sharekey-owned Maven coordinates and a unique release
-version; the exact coordinates are not yet configured. Inspect all of:
+Keep `io.realm.kotlin` model/API packages. The candidate uses Maven group and Gradle plugin ID
+`com.sharekey.realm.kotlin`, version `3.0.0-sharekey.1`. Inspect all of:
 
 - `buildSrc/src/main/kotlin/Config.kt` and `io/realm/RealmPublishPlugin.kt`;
 - `packages/gradle-plugin` artifact IDs, compiler selection, substitutions and marker publication;
@@ -92,9 +91,10 @@ version; the exact coordinates are not yet configured. Inspect all of:
 - generated version constants, native-library loading/cache paths and consumer ProGuard rules;
 - workflow publish conditions and release scripts.
 
-The inherited publisher embeds Realm's Maven group, signing/staging configuration and upstream
-distribution destinations. Changing one group constant does not redirect the whole release flow.
-Use a local test repository until destinations and credentials are deliberately configured.
+The Gradle publisher now stages locally without Realm's Nexus profile or fixed signing-key ID.
+Signing uses Sharekey-supplied environment/user properties. The inherited release script is disabled;
+other legacy distribution scripts are not a release path. Remote publication requires deliberate
+registry and credential setup; see [publishing](publishing.md).
 
 Each release should record SDK/Core commits, toolchain, unique version, immutable tag, checksums and
 test results. Keep secrets outside tracked files. Assign a maintainer and document which Kotlin,

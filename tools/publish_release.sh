@@ -14,6 +14,9 @@
 # 8. Notify #realm-releases and #realm-java-team-ci about the new release.
 set -e
 
+echo "This upstream release script is disabled in the Sharekey fork. See docs/maintainers/publishing.md." >&2
+exit 1
+
 ######################################
 # Input Validation
 ######################################

@@ -7,8 +7,9 @@
   application; do not apply the mobile repository's Yarn commands or TypeScript conventions here.
 - `community` is the local-database maintenance baseline. `main` retains Atlas Sync code. Do not merge
   `main` wholesale into `community`; review individual fixes instead.
-- The fork starts from upstream `community` at `28182c37` (Realm 3.0.0). Kotlin 2.2.10 migration
-  work uses the distinct `3.0.0-sharekey.1-SNAPSHOT` development version. See
+- The fork starts from upstream `community` at `28182c37` (Realm 3.0.0). Kotlin 2.2.10 release
+  preparation uses `com.sharekey.realm.kotlin` / `3.0.0-sharekey.1`. Source packages remain
+  `io.realm.kotlin`. See
   [migration validation](docs/maintainers/kotlin-2.2.10-migration.md) for the tested scope.
 
 ## Find the owning layer
@@ -59,8 +60,9 @@ See [repository map](docs/maintainers/repository-map.md) for source paths and de
 
 - Follow [fork maintenance](docs/maintainers/fork-maintenance.md). It records the audited Infomaniak
   source commit, the misleading `3.2.9` tag and the Sharekey adoption gates.
-- Current publishing configuration still targets upstream Realm coordinates and infrastructure.
-  Use an isolated local test repository while developing; inspect destinations before publishing.
+- The Gradle publisher stages Sharekey artifacts locally; remote distribution is not configured yet.
+  Read [publishing](docs/maintainers/publishing.md) before releasing. Never use the inherited upstream
+  snapshot/deployment scripts or infer that a version is public merely because Config.kt contains it.
 - Keep credentials outside the repository and logs. Never add tokens, signing material or private
   environment files to documentation or commits.
 - For application adoption, test Realm JS and Kotlin against the same encrypted files. This SDK's

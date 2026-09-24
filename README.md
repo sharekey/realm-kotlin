@@ -16,9 +16,10 @@ This repository holds the source code for the Kotlin SDK for Realm, which runs o
 ## Sharekey fork maintenance
 
 Use `community` as the baseline for the local-database SDK. This checkout adapts upstream Realm
-3.0.0 to Kotlin 2.2.10. The development version, `3.0.0-sharekey.1-SNAPSHOT`, is available only through
-local publication; it has not been released to Maven Central or the Gradle Plugin Portal. The
-publication badges above refer to upstream artifacts. See the
+3.0.0 to Kotlin 2.2.10. The release candidate uses `com.sharekey.realm.kotlin` Maven coordinates and
+plugin ID, version `3.0.0-sharekey.1`; source imports remain `io.realm.kotlin`. It is currently
+available through local publication only. See [publishing status](docs/maintainers/publishing.md)
+before configuring a remote consumer. The publication badges above refer to upstream artifacts. See the
 [migration record](docs/maintainers/kotlin-2.2.10-migration.md) for the toolchain, validation scope and
 [local consumer checks](docs/maintainers/kotlin-2.2.10-migration.md#reproduce-the-packaged-consumer-checks).
 Start with the [maintainer guide](docs/maintainers/README.md) for the module map, runtime, compiler,
@@ -32,7 +33,7 @@ build/test commands and fork strategy. Automated contributors should also read [
 
 # General Availability 
 
-The upstream Realm Kotlin SDK reached GA. This fork's current adaptation is an unreleased development version.
+The upstream Realm Kotlin SDK reached GA. This fork's current adaptation is an unpublished release candidate.
 
 Documentation can be found in the [docs/](docs/README.md) dir.
 
@@ -256,7 +257,7 @@ Next: head to the full KMM [example](https://github.com/realm/realm-kotlin-sampl
 # Using Snapshots
 
 The examples below are historical upstream snapshot instructions. Their Sonatype URLs do not host
-this fork's `3.0.0-sharekey.1-SNAPSHOT` artifacts. Use the
+Sharekey artifacts. Use the
 [local publication workflow](docs/maintainers/kotlin-2.2.10-migration.md#reproduce-the-packaged-consumer-checks)
 for Sharekey development; these upstream examples do not establish current repository availability.
 

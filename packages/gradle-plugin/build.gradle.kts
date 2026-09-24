@@ -32,8 +32,8 @@ fun createMarkerArtifact(): Boolean {
 }
 
 pluginBundle {
-    website = "https://github.com/realm/realm-kotlin"
-    vcsUrl = "https://github.com/realm/realm-kotlin"
+    website = Realm.projectUrl
+    vcsUrl = Realm.SCM.url
     tags = listOf("MongoDB", "Realm", "Database", "Kotlin", "Mobile", "Multiplatform", "Android", "KMM")
 
     mavenCoordinates {
@@ -47,7 +47,7 @@ gradlePlugin {
     plugins {
         create("RealmPlugin") {
             id = Realm.pluginPortalId
-            displayName = "Realm Kotlin Plugin"
+            displayName = "Sharekey Realm Kotlin Plugin"
             description = "Gradle plugin for the Realm Kotlin SDK, supporting Android and Multiplatform. " +
                 "Realm is a mobile database: Build better apps faster."
             implementationClass = "io.realm.kotlin.gradle.RealmPlugin"
@@ -90,6 +90,7 @@ sourceSets {
 // Task to generate the Gradle plugin runtime version constant
 val versionConstants: Task = tasks.create("versionConstants") {
     inputs.property("version", project.version)
+    inputs.property("group", project.group)
     val outputDir = file(versionDirectory)
     outputs.dir(outputDir)
 
@@ -101,6 +102,7 @@ val versionConstants: Task = tasks.create("versionConstants") {
             // Generated file. Do not edit!
             package io.realm.kotlin.gradle
             internal const val PLUGIN_VERSION = "${project.version}"
+            internal const val PLUGIN_GROUP = "${project.group}"
             """.trimIndent()
         )
     }

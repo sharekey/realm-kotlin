@@ -2,7 +2,7 @@ plugins {
     kotlin("multiplatform")
     // kotlin("native.cocoapods")
     id("com.android.library")
-    id("io.realm.kotlin")
+    id("com.sharekey.realm.kotlin")
 }
 
 version = "1.0"
@@ -28,7 +28,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("io.realm.kotlin:library-base:${Realm.version}")
+                implementation("${Realm.group}:library-base:${Realm.version}")
             }
         }
         val androidMain by getting

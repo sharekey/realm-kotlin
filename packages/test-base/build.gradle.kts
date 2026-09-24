@@ -26,26 +26,26 @@ plugins {
     kotlin("plugin.serialization") version Versions.kotlin
     // Test relies on the compiler plugin, but we cannot apply our full plugin from within the same
     // gradle run, so we just apply the compiler plugin directly as a dependency below instead
-    // id("io.realm.kotlin")
+    // id("com.sharekey.realm.kotlin")
 }
 
 // Test relies on the compiler plugin, but we cannot apply our full plugin from within the same
 // gradle run, so we just apply the compiler plugin directly
 dependencies {
-    kotlinCompilerPluginClasspath("io.realm.kotlin:plugin-compiler:${Realm.version}")
-    kotlinNativeCompilerPluginClasspath("io.realm.kotlin:plugin-compiler-shaded:${Realm.version}")
+    kotlinCompilerPluginClasspath("${Realm.group}:plugin-compiler:${Realm.version}")
+    kotlinNativeCompilerPluginClasspath("${Realm.group}:plugin-compiler-shaded:${Realm.version}")
     kotlinCompilerClasspath("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
     kotlinCompilerClasspath("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:${Versions.kotlin}")
 }
 
-// Substitute maven coordinate dependencies of pattern 'io.realm.kotlin:<name>:${Realm.version}'
+// Substitute maven coordinate dependencies of pattern '${Realm.group}:<name>:${Realm.version}'
 // with project dependency ':<name>' if '<name>' is configured as a subproject of the root project
 configurations.all {
     resolutionStrategy.dependencySubstitution {
         rootProject.allprojects
             .filter { it != project && it != rootProject }
             .forEach { subproject: Project ->
-                substitute(module("io.realm.kotlin:${subproject.name}:${Realm.version}")).using(
+                substitute(module("${Realm.group}:${subproject.name}:${Realm.version}")).using(
                     project(":${subproject.name}")
                 )
             }
@@ -61,11 +61,11 @@ configurations.all {
     // See https://github.com/realm/realm-kotlin/issues/1404 for more details.
     if (name.endsWith("UnitTestRuntimeClasspath")) {
         resolutionStrategy.dependencySubstitution {
-            substitute(module("io.realm.kotlin:library-base:${Realm.version}")).using(
-                module("io.realm.kotlin:library-base-jvm:${Realm.version}")
+            substitute(module("${Realm.group}:library-base:${Realm.version}")).using(
+                module("${Realm.group}:library-base-jvm:${Realm.version}")
             )
-            substitute(module("io.realm.kotlin:cinterop:${Realm.version}")).using(
-                module("io.realm.kotlin:cinterop-jvm:${Realm.version}")
+            substitute(module("${Realm.group}:cinterop:${Realm.version}")).using(
+                module("${Realm.group}:cinterop-jvm:${Realm.version}")
             )
         }
     }
@@ -81,13 +81,13 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
                 // FIXME AUTO-SETUP Removed automatic dependency injection to ensure observability of
                 //  requirements for now
-                implementation("io.realm.kotlin:library-base:${Realm.version}")
+                implementation("${Realm.group}:library-base:${Realm.version}")
                 // FIXME API-SCHEMA We currently have some tests that verified injection of
                 //  interfaces, uses internal representation for property meta data, etc. Can
                 //  probably be replaced when schema information is exposed in the public API
                 // Our current compiler plugin tests only runs on JVM, so makes sense to keep them
                 // for now, but ideally they should go to the compiler plugin tests.
-                implementation("io.realm.kotlin:cinterop:${Realm.version}")
+                implementation("${Realm.group}:cinterop:${Realm.version}")
                 implementation("org.jetbrains.kotlinx:atomicfu:${Versions.atomicfu}")
                 implementation("com.squareup.okio:okio:${Versions.okio}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.datetime}")
@@ -229,7 +229,7 @@ kotlin {
     sourceSets {
         val jvmMain by getting {
             dependencies {
-                implementation("io.realm.kotlin:plugin-compiler:${Realm.version}")
+                implementation("${Realm.group}:plugin-compiler:${Realm.version}")
                 implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
                 implementation("dev.zacsweers.kctfork:core:${Versions.kotlinCompileTesting}")
             }

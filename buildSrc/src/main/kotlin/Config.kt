@@ -62,10 +62,10 @@ val HOST_OS: OperatingSystem = findHostOs()
 
 object Realm {
     val ciBuild = (System.getenv("CI") != null)
-    const val version = "3.0.0-sharekey.1-SNAPSHOT"
-    const val group = "io.realm.kotlin"
-    const val projectUrl = "https://realm.io"
-    const val pluginPortalId = "io.realm.kotlin"
+    const val version = "3.0.0-sharekey.1"
+    const val group = "com.sharekey.realm.kotlin"
+    const val projectUrl = "https://github.com/sharekey/realm-kotlin"
+    const val pluginPortalId = "com.sharekey.realm.kotlin"
     // Modules has to match ${project.group}:${project.name} to make composite build work
     const val compilerPluginId = "plugin-compiler"
     const val compilerPluginIdNative = "plugin-compiler-shaded"
@@ -80,18 +80,17 @@ object Realm {
     }
     object IssueManagement {
         const val system = "Github"
-        const val url = "https://github.com/realm/realm-kotlin/issues"
+        const val url = "https://github.com/sharekey/realm-kotlin/issues"
     }
     object SCM {
-        const val connection = "scm:git:git://github.com/realm/realm-kotlin.git"
-        const val developerConnection = "scm:git:ssh://github.com/realm/realm-kotlin.git"
-        const val url = "https://github.com/realm/realm-kotlin"
+        const val connection = "scm:git:git://github.com/sharekey/realm-kotlin.git"
+        const val developerConnection = "scm:git:ssh://github.com/sharekey/realm-kotlin.git"
+        const val url = "https://github.com/sharekey/realm-kotlin"
     }
     object Developer {
-        const val name = "Realm"
-        const val email = "info@realm.io"
-        const val organization = "MongoDB"
-        const val organizationUrl = "https://www.mongodb.com"
+        const val name = "Sharekey"
+        const val organization = "Sharekey"
+        const val organizationUrl = "https://sharekey.com"
     }
 }
 
@@ -106,7 +105,7 @@ object Versions {
         const val r8 = "8.10.21" // See https://developer.android.com/build/kotlin-support
     }
     const val androidxBenchmarkPlugin = "1.2.0-alpha12" // https://maven.google.com/web/index.html#androidx.benchmark:androidx.benchmark.gradle.plugin
-    const val androidxStartup = "1.1.1" // https://maven.google.com/web/index.html?q=startup#androidx.startup:startup-runtime
+    const val androidxStartup = "1.2.0" // https://maven.google.com/web/index.html?q=startup#androidx.startup:startup-runtime
     const val androidxJunit = "1.1.3" // https://maven.google.com/web/index.html#androidx.test.ext:junit
     const val androidxTest = "1.4.0" // https://maven.google.com/web/index.html#androidx.test:rules
     // Must be built with same (major.minor!?) kotlin version as 'kotlin' variable below, to be binary compatible with kotlin
@@ -130,7 +129,6 @@ object Versions {
     const val ktlint = "0.45.2" // https://github.com/pinterest/ktlint
     const val ktor = "2.3.12" // https://github.com/ktorio/ktor
     const val multidex = "2.0.1" // https://developer.android.com/jetpack/androidx/releases/multidex
-    const val nexusPublishPlugin = "1.3.0" // https://github.com/gradle-nexus/publish-plugin
     const val okio = "3.9.0" // https://square.github.io/okio/#releases
     const val relinker = "1.4.5" // https://github.com/KeepSafe/ReLinker
     const val serialization = "1.9.0" // https://kotlinlang.org/docs/releases.html#release-details
