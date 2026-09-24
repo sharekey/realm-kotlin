@@ -60,6 +60,11 @@ not release-ready. See the [migration evidence](kotlin-2.2.10-migration.md).
 - Root `ktlintCheck detekt` passed. KMP detekt tasks still report `NO-SOURCE` as documented.
 - All four Android JNI ABIs are present. ARM64 `librealmc.so` SHA-256 is
   `86524a16def2467e7027872d46b5cf8e30064c70a178289bc6c9361b47950d13`, unchanged from the tested snapshot.
+- The mobile app passed ARM64 debug APK assembly and releaseDev Kotlin compilation with
+  Gradle 9.4.1/AGP 9.2.1. Its 32 runtime dependency graphs resolve the Sharekey candidate, preserving
+  all other runtime lock entries. APK signatures and 16 KB ZIP alignment passed; its version string,
+  single initializer and native-library hash match this candidate. No packaged app release or new
+  device test is claimed for this step. Mobile details: `docs/realm-kotlin-local-testing.md`.
 - Relative documentation file links, workflow YAML parsing and `git diff --check` passed.
   Remote CI, signing, registry upload and a clean remote consumer remain unverified.
 
