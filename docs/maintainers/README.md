@@ -35,8 +35,8 @@ Do not read these SDK versions as the versions of the consuming mobile app.
 
 `community` is the appropriate base for Sharekey's local database usage. It contains the removal of
 Atlas Sync and the 3.0.0 release. Sharekey's Kotlin 2.2.10 adaptation is developed on top of that
-baseline. Own publication coordinates are configured. Remote Maven distribution still requires
-registry setup; see [publishing](publishing.md).
+baseline. Own publication coordinates are configured. Mobile distribution uses a Maven repository packaged in a GitHub Release tarball and installed
+with Yarn; see [publishing](publishing.md).
 
 ## Evidence and maintenance status
 

@@ -4,10 +4,11 @@ Tracking: [M-3153](https://yt.sharekey.com/issue/M-3153).
 
 ## Current status
 
-`3.0.0-sharekey.1` is an **unpublished candidate**, not a downloadable Maven Central release.
-The mobile maintainer tested the preceding local snapshot successfully and authorized adoption on
-2026-09-24. The first release must still be staged and distributed through an agreed Maven registry.
-No registry credentials or publication variables were configured in the GitHub repository at inspection.
+The selected distribution is a GitHub Release tarball consumed by Yarn in the mobile app.
+`3.0.0-sharekey.1` remains a candidate until its tagged workflow succeeds and the release is visible.
+No Maven Central, GitHub Packages or npm registry account is required. The release job uses the
+repository-scoped `GITHUB_TOKEN`; consumers download the public Release asset without credentials.
+The maintainer accepted the preceding local snapshot and authorized adoption on 2026-09-24.
 
 | Contract | Value |
 | --- | --- |
@@ -70,7 +71,57 @@ not release-ready. See the [migration evidence](kotlin-2.2.10-migration.md).
 - Relative documentation file links, workflow YAML parsing and `git diff --check` passed.
   Remote CI, signing, registry upload and a clean remote consumer remain unverified.
 
-## Signing and remote distribution
+## GitHub Release distribution
+
+[Sharekey mobile release](../../.github/workflows/sharekey-release.yml) validates the migration branch
+and releases tags matching `v*-sharekey.*`. Manual runs validate/package; publication requires a tag
+whose value is exactly `v` plus `Realm.version`. Build/test jobs have read-only repository access;
+only the release job has `contents: write`. The inherited build/test workflows remain in place.
+
+The workflow uses macOS 15/Xcode 16.4, Temurin 17, Node 22.17.0, SWIG 4.3.1 (checksum pinned),
+CMake 3.22.1 and Android NDK 27.0.12077973. It builds the macOS JNI library with a minimum deployment
+target of 11.0 and both arm64/x86_64 slices; otherwise CMake can inherit the builder's much newer OS.
+It compiles all four Android ABIs, runs compiler/JVM tests, packs the Maven repository and tests
+independent consumers against the extracted tarball. A Linux job runs the published Android SDK's
+instrumentation tests on an API 35 x86_64 emulator. Static analysis must also pass before publishing.
+
+[build-mobile-release.sh](../../tools/build-mobile-release.sh) is the macOS build entry point.
+[pack-mobile.py](../../tools/pack-mobile.py) verifies POM coordinates, SDK dependency closure,
+Gradle metadata hashes, all four Android native libraries and 16 KB ELF segment alignment. It packages
+nine modules, source JARs, original POM/module metadata, licenses, checksums and source/Core provenance.
+The npm package is `@sharekey/realm-kotlin`, marked private to prevent accidental registry publishing.
+It contains no JavaScript entry point or installation scripts. npm is used only to make a tarball.
+
+The bundle includes the JVM modules needed by the compiler plugin and Android unit-test substitution.
+Its native JVM runtime supports macOS only. Linux/Windows JVM runtime, Apple Kotlin/Native SDK
+publications and the native-only shaded compiler distribution are outside this mobile bundle.
+Root KMP metadata retains its original Apple variant declarations; do not consume those variants from
+this archive. Source JARs are included; the excluded Dokka output is not a published documentation site.
+
+Release procedure:
+
+1. Update `Realm.version` in Config.kt for every release; never reuse a distributed version.
+2. Commit the change on the maintained migration/community line and run its checks.
+3. Push an annotated tag matching the version, for example `v3.0.0-sharekey.1`.
+4. Wait for all jobs of **Sharekey mobile release** to succeed. The release contains
+   `sharekey-realm-kotlin-<version>.tgz`, its `.sha256` and `provenance.json`.
+5. In mobile, pin the exact `/releases/download/v<version>/...tgz` URL in `package.json`, run Yarn,
+   update the matching Gradle version and regenerate Android dependency locks. Commit both lockfiles.
+6. Verify a mobile build and the affected device flows. SDK CI does not test the app's authenticated
+   JS/Kotlin file-sharing and storage lifecycle.
+
+Ordinary mobile builds need only their existing Yarn install and Android toolchain. Gradle resolves
+`com.sharekey.realm.kotlin` exclusively from the installed package's `maven/` directory, including the
+buildscript plugin. A sibling checkout, `mavenLocal()` publication and registry credentials are not
+part of this delivery path. The tag workflow publishes new releases without replacing existing ones.
+Workflow artifacts are temporary job handoffs; the app's dependency URL always targets a Release asset.
+
+Before the first successful run, this describes configured behavior rather than completed remote
+validation. Record the run/release and mobile validation here after publication succeeds.
+
+## Optional Maven registry publishing
+
+A Maven registry is deferred. The comparison below is retained for a future public SDK distribution.
 
 `-PsignBuild=true` enables Gradle signing. Provide the ASCII-armored private key as `REALM_SIGNING_KEY`
 and its passphrase as `REALM_SIGNING_PASSWORD` in the environment or private Gradle user properties.
@@ -99,9 +150,9 @@ GitHub Packages is an alternative, but even public Maven downloads require authe
 That choice also requires provisioning read credentials for developers and TeamCity. A private Maven
 registry needs its confirmed URL and the corresponding reader/publisher setup.
 
-Before changing the app's default repository, verify the exact version can be resolved from a clean
-consumer through the selected remote registry. Then remove its unconditional sibling-checkout path,
-update both plugin/runtime coordinates and regenerate all Android dependency lockfiles. Keep local
+Before switching from the Release tarball to a Maven registry, verify the exact version can be resolved from a clean
+consumer through the selected remote registry. Then replace the installed package repository,
+keep plugin/runtime coordinates aligned and regenerate all Android dependency lockfiles. Keep local
 SDK work behind an explicit opt-in override. Do not make CI depend on an unpublished remote version.
 
 For a release, record the SDK commit/tag, Core SHA, artifact SHA-256 values, publication scope,

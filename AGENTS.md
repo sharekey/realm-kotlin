@@ -60,7 +60,8 @@ See [repository map](docs/maintainers/repository-map.md) for source paths and de
 
 - Follow [fork maintenance](docs/maintainers/fork-maintenance.md). It records the audited Infomaniak
   source commit, the misleading `3.2.9` tag and the Sharekey adoption gates.
-- The Gradle publisher stages Sharekey artifacts locally; remote distribution is not configured yet.
+- The Gradle publisher stages Sharekey artifacts locally; the mobile release workflow packages them
+  for GitHub Releases and Yarn consumption.
   Read [publishing](docs/maintainers/publishing.md) before releasing. Never use the inherited upstream
   snapshot/deployment scripts or infer that a version is public merely because Config.kt contains it.
 - Keep credentials outside the repository and logs. Never add tokens, signing material or private
