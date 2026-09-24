@@ -20,7 +20,14 @@ MODULES = (
     "cinterop", "cinterop-android", "cinterop-jvm", "gradle-plugin", "jni-swig-stub",
     "library-base", "library-base-android", "library-base-jvm", "plugin-compiler",
 )
-ABIS = ("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+# Android NDK ELF class / e_machine pairs (ELFCLASS32=1, ELFCLASS64=2).
+ELF_ABIS = {
+    "arm64-v8a": (2, 183),  # EM_AARCH64
+    "armeabi-v7a": (1, 40),  # EM_ARM
+    "x86": (1, 3),  # EM_386
+    "x86_64": (2, 62),  # EM_X86_64
+}
+ABIS = tuple(ELF_ABIS)
 LEGACY_GROUPS = {"io.realm.kotlin", "com.infomaniak.realm.kotlin"}
 PLATFORM_ROOTS = {
     "cinterop-android": "cinterop", "cinterop-jvm": "cinterop",
@@ -40,19 +47,28 @@ def sdk_version():
     return version
 
 
-def verify_elf(content, name):
-    if content[:4] != b"\x7fELF" or content[5] != 1:
+def verify_elf(content, name, abi):
+    if len(content) < 52 or content[:4] != b"\x7fELF" or content[5] != 1:
         raise ValueError(f"Unexpected ELF format: {name}")
-    is_64 = content[4] == 2
+    expected_class, expected_machine = ELF_ABIS[abi]
+    machine = struct.unpack_from("<H", content, 18)[0]
+    if (content[4], machine) != (expected_class, expected_machine):
+        raise ValueError(f"ELF architecture does not match {abi}: {name}")
+    is_64 = expected_class == 2
+    header_size, program_header_size = (64, 56) if is_64 else (52, 32)
+    if len(content) < header_size:
+        raise ValueError(f"Truncated ELF header: {name}")
     offset = struct.unpack_from("<Q" if is_64 else "<I", content, 32 if is_64 else 28)[0]
     entry_size, count = struct.unpack_from("<HH", content, 54 if is_64 else 42)
+    if entry_size != program_header_size or offset < header_size or offset + count * entry_size > len(content):
+        raise ValueError(f"Invalid ELF program header table: {name}")
     loads = 0
     for index in range(count):
         start = offset + index * entry_size
         if struct.unpack_from("<I", content, start)[0] == 1:
             loads += 1
             alignment = struct.unpack_from("<Q" if is_64 else "<I", content, start + (48 if is_64 else 28))[0]
-            if alignment < 16384:
+            if alignment < 16384 or alignment & (alignment - 1):
                 raise ValueError(f"{name} is not aligned for 16 KB pages")
     if not loads:
         raise ValueError(f"No ELF load segments: {name}")
@@ -149,7 +165,7 @@ def pack(output):
                 raise ValueError("Android publication must contain all four Realm ABIs")
             for name in sorted(natives):
                 content = archive.read(name)
-                verify_elf(content, name)
+                verify_elf(content, name, name.split("/")[1])
                 native_hashes[name] = hashlib.sha256(content).hexdigest()
         jvm = repository / "cinterop-jvm" / version / f"cinterop-jvm-{version}.jar"
         with zipfile.ZipFile(jvm) as archive:

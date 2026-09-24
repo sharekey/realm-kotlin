@@ -1,9 +1,10 @@
-"""Regression checks for source provenance and temporary consumer repositories."""
+"""Regression checks for release provenance, metadata, ELF files and consumer repositories."""
 
 import hashlib
 import importlib.util
 import os
 import shutil
+import struct
 import subprocess
 import tarfile
 import tempfile
@@ -124,6 +125,78 @@ class GradleMetadataTests(unittest.TestCase):
             {"group": "org.jetbrains.kotlin", "module": "kotlin-stdlib", "version": {"requires": "2.2.10"}},
         ]
         self.verify("library-base", metadata)
+
+
+class AndroidElfTests(unittest.TestCase):
+    # Independent ELF fixtures: ELF class, e_machine, ELF header size, program header size.
+    architectures = {
+        "arm64-v8a": (2, 183, 64, 56),
+        "armeabi-v7a": (1, 40, 52, 32),
+        "x86": (1, 3, 52, 32),
+        "x86_64": (2, 62, 64, 56),
+    }
+
+    def elf(self, abi, alignment=16384, segment_type=1):
+        elf_class, machine, header_size, entry_size = self.architectures[abi]
+        content = bytearray(header_size + entry_size)
+        content[:7] = b"\x7fELF" + bytes((elf_class, 1, 1))
+        struct.pack_into("<HHI", content, 16, 3, machine, 1)
+        if elf_class == 2:
+            struct.pack_into("<Q", content, 32, header_size)
+            struct.pack_into("<HHH", content, 52, header_size, entry_size, 1)
+            struct.pack_into("<IIQQQQQQ", content, header_size, segment_type, 4, 0, 0, 0,
+                             len(content), len(content), alignment)
+        else:
+            struct.pack_into("<I", content, 28, header_size)
+            struct.pack_into("<HHH", content, 40, header_size, entry_size, 1)
+            struct.pack_into("<IIIIIIII", content, header_size, segment_type, 0, 0, 0,
+                             len(content), len(content), 4, alignment)
+        return content
+
+    def verify(self, content, abi):
+        pack_mobile.verify_elf(content, f"jni/{abi}/librealmc.so", abi)
+
+    def test_accepts_all_four_correctly_labeled_architectures(self):
+        for abi in self.architectures:
+            with self.subTest(abi=abi):
+                self.verify(self.elf(abi), abi)
+
+    def test_rejects_libraries_copied_between_abi_directories(self):
+        for source_abi in self.architectures:
+            for destination_abi in self.architectures:
+                if source_abi != destination_abi:
+                    with self.subTest(source=source_abi, destination=destination_abi):
+                        with self.assertRaisesRegex(ValueError, "ELF architecture does not match"):
+                            self.verify(self.elf(source_abi), destination_abi)
+
+    def test_rejects_wrong_elf_class_even_when_machine_matches(self):
+        for abi in self.architectures:
+            with self.subTest(abi=abi):
+                content = self.elf(abi)
+                content[4] = 3 - content[4]
+                with self.assertRaisesRegex(ValueError, "ELF architecture does not match"):
+                    self.verify(content, abi)
+
+    def test_rejects_truncated_headers_and_program_tables(self):
+        for abi in self.architectures:
+            content = self.elf(abi)
+            for length in (0, 6, 51, 63, len(content) - 1):
+                with self.subTest(abi=abi, length=length):
+                    with self.assertRaises(ValueError):
+                        self.verify(content[:length], abi)
+
+    def test_rejects_inadequate_or_invalid_page_alignment(self):
+        for abi in self.architectures:
+            for alignment in (4096, 24576):
+                with self.subTest(abi=abi, alignment=alignment):
+                    with self.assertRaisesRegex(ValueError, "not aligned for 16 KB pages"):
+                        self.verify(self.elf(abi, alignment=alignment), abi)
+
+    def test_rejects_elf_without_load_segments(self):
+        for abi in self.architectures:
+            with self.subTest(abi=abi):
+                with self.assertRaisesRegex(ValueError, "No ELF load segments"):
+                    self.verify(self.elf(abi, segment_type=4), abi)
 
 
 class ConsumerRepositoryTests(unittest.TestCase):

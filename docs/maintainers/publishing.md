@@ -99,8 +99,10 @@ that follows successful named-companion CRUD assertions. Static analysis must pa
 
 [build-mobile-release.sh](../../tools/build-mobile-release.sh) is the macOS build entry point.
 [pack-mobile.py](../../tools/pack-mobile.py) verifies POM coordinates, SDK dependency closure,
-Gradle metadata hashes, all four Android native libraries and 16 KB ELF segment alignment. It packages
-nine modules, source JARs, original POM/module metadata, licenses, checksums and source/Core provenance.
+Gradle metadata hashes, all four Android native libraries and 16 KB ELF segment alignment. Each
+Android library must match its advertised ABI by ELF machine type and 32/64-bit class. Mislabeled
+libraries and malformed or truncated ELF headers are rejected. The archive includes nine modules,
+source JARs, original POM/module metadata, licenses, checksums and source/Core provenance.
 Both the pre-build and packaging checks reject modified or untracked SDK/Core sources. Ignored
 build output is allowed; CI keeps its compiler cache under `build/`.
 [`test-mobile-package.sh`](../../tools/test-mobile-package.sh) extracts into a new temporary directory
