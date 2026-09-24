@@ -8,6 +8,7 @@ plugins {
 version = "1.0"
 
 kotlin {
+    jvmToolchain(17)
     androidTarget()
     jvm()
 // Disable iOS until needed
@@ -57,6 +58,10 @@ kotlin {
 android {
     namespace = "io.realm.kotlin.benchmarks"
     compileSdk = Versions.Android.compileSdkVersion
+    compileOptions {
+        sourceCompatibility = Versions.sourceCompatibilityVersion
+        targetCompatibility = Versions.targetCompatibilityVersion
+    }
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     defaultConfig {
         minSdk = Versions.Android.minSdk

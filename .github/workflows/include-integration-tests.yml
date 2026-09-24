@@ -190,7 +190,7 @@ jobs:
 
       - name: Build benchmarks
         working-directory: benchmarks
-        run: ./gradlew assemble
+        run: ./gradlew assemble :androidApp:assembleReleaseAndroidTest :jvmApp:jmhJar
 
   gradle-plugin-integration:
     strategy:

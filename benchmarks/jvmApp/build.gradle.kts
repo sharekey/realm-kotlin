@@ -1,8 +1,8 @@
 plugins {
     java
+    kotlin("jvm")
     id("me.champeau.jmh") version Versions.jmhPlugin
 }
-apply(plugin = "kotlin")
 
 dependencies {
     jmh(project(":shared"))
@@ -19,6 +19,6 @@ jmh {
     resultsFile.set(file("build/reports/benchmarks.json"))
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = "11"
+kotlin {
+    jvmToolchain(17)
 }

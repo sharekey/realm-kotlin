@@ -101,10 +101,10 @@ Linux runtime support is not proof that the default local Linux Gradle source bu
 ## Root static-analysis gates
 
 From the repository root, `./gradlew ktlintCheck detekt` checks the SDK builds under `packages/`.
-The old KMM sample and benchmarks retain explicit `ktlintCheckExamplesKmmSample`,
-`ktlintCheckBenchmarks`, `detektExamplesKmmSample` and `detektBenchmarks` tasks. Their wrappers/scripts
-have not been migrated, although they share the upgraded `buildSrc` dependencies; they are not part
-of the default gate and are not currently a supported build matrix.
+The KMM sample and benchmarks retain explicit `ktlintCheckExamplesKmmSample`,
+`ktlintCheckBenchmarks`, `detektExamplesKmmSample` and `detektBenchmarks` tasks outside the default
+SDK gate. The benchmark build has been migrated to Gradle 8.14.3/JVM 17; its assembly checks do not
+establish clean benchmark lint results. The old KMM sample still needs migration.
 
 Detekt 1.23.6 reports `NO-SOURCE` for the multiplatform SDK/test projects in the inherited setup.
 The aggregate currently analyzes the JVM Gradle/compiler plugins only; ktlint scans SDK Kotlin
@@ -123,6 +123,10 @@ The Realm Java interoperability example uses the current wrapper, AGP namespace 
 Realm Java 10.19.0 (the old 10.11.0 transformer does not support AGP 8). This example checks a separate
 SDK interoperability contract; the mobile app does not acquire a Realm Java dependency.
 
+The [benchmark build](../../benchmarks/README.md) also uses Gradle 8.14.3/JVM 17 and the staged SDK.
+Its reusable CI job explicitly assembles the Android instrumentation APK and JMH JAR, in addition
+to `assemble`; compiling benchmark artifacts does not measure performance.
+
 The additional [Sharekey workflow](../../.github/workflows/sharekey.yml) runs static-analysis and
 Gradle plugin validation for `community` pushes and pull requests. It reuses the workflow below and
 does not replace the inherited matrix. These checks do not provide native-runtime or release coverage.
@@ -130,11 +134,11 @@ does not replace the inherited matrix. These checks do not provide native-runtim
 The inherited entry point is [`.github/workflows/pr.yml`](../../.github/workflows/pr.yml), with reusable
 static-analysis/integration workflows. Its intended flow builds per-platform artifacts, assembles a
 local Maven repository and runs tests against those artifacts. The migrated static-analysis jobs
-explicitly select Temurin JDK 17 and CMake 3.22.1; they run the SDK-scoped root gates. These YAML
-changes were checked locally, not executed on GitHub during this review.
+explicitly select Temurin JDK 17 and CMake 3.22.1; the SDK-scoped root gates have passed in the
+Sharekey workflows on GitHub. This does not establish that every inherited native job is configured.
 
 The remaining upstream pipeline is not a verified Sharekey release pipeline. It still includes
-unmigrated benchmark/native consumer builds, old runner selections and repository variables.
+unverified native consumer builds, old runner selections and repository variables.
 The reusable integration jobs explicitly select Temurin 17. Other inherited jobs still require
 `VERSION_JAVA=17` and `VERSION_JAVA_DISTRIBUTION=temurin`; Java 11 step labels do not reveal the
 variable's actual configured value. `VERSION_CMAKE`, `VERSION_SWIG`, `VERSION_NINJA`,

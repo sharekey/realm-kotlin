@@ -181,8 +181,10 @@ The shipped bundle supports Android and macOS JVM. Apple C interop/metadata comp
 but Apple executable tests and Windows/Linux JVM native runtime are outside the release bundle.
 This work does not migrate Kotlin to 2.3 or upgrade Realm Core. Gradle 8.3/8.5 consumer fixtures and
 the Realm Java example have since been migrated; Gradle 7.2/7.5 are retired from the active matrix.
-Compose/KMM examples and benchmarks still need separate compatibility work. The inherited upstream
-pipeline is not the Sharekey publication path.
+The benchmark build now uses Gradle 8.14.3, the typed Kotlin compiler-options DSL and JVM 17 for
+Java/Kotlin sources. Its consumer gate assembles both the Android instrumentation APK and JMH JAR;
+this is build compatibility coverage, not a performance measurement. Compose/KMM examples still
+need separate compatibility work. The inherited upstream pipeline is not the Sharekey publication path.
 
 For future SDK upgrades, repeat shared encrypted-file, lifecycle and migration checks against
 Sharekey data as well as the SDK and release gates in [fork maintenance](fork-maintenance.md).

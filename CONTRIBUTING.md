@@ -72,8 +72,9 @@ artifacts, run from the repository root:
 ```
 
 The minimal Android sample also checks generated models and consumer ProGuard rules in an
-installable minified release APK. Historical fixtures, KMM examples and benchmarks need separate
-compatibility work; their older wrappers do not establish support for the migrated SDK.
+installable minified release APK. The [benchmarks](benchmarks/README.md) have a migrated JVM/Android
+build, including JMH and instrumentation APK assembly checks. Performance measurements are separate.
+Historical Gradle 7.2/7.5 fixtures and KMM examples are outside the validated consumer matrix.
 
 Release publication uses the Sharekey workflow and an immutable version tag. Inspect
 publishing destinations before invoking release tasks; the inherited scripts target upstream services.
@@ -88,7 +89,8 @@ Avoid wildcard imports. From `packages/`, run the relevant module checks, for ex
 ```
 
 Repository-root `ktlintCheck`, `ktlintFormat` and `detekt` cover SDK packages. Explicit tasks for
-legacy examples/benchmarks remain available, but are outside the default gates until migrated.
+examples/benchmarks remain available outside the default SDK gates. Benchmark assembly validation
+is separate from static analysis.
 See the [build guide](docs/maintainers/build-and-test.md) for exact coverage and CI limitations.
 
 Shared dependency versions live in [Config.kt](buildSrc/src/main/kotlin/Config.kt). Update the owning

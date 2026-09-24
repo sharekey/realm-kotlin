@@ -1,97 +1,70 @@
-# Realm Kotlin Benchmarks
+# Realm Kotlin benchmarks
 
-This project contains microbenchmarks for the Realm Kotlin SDK. Benchmarks needs to be run on 
-each platform individually since tools and capabilities vary greatly between platforms.
+This build contains Android microbenchmarks and JVM JMH benchmarks for the SDK. iOS and macOS
+Kotlin/Native benchmarks are not implemented. The JVM benchmarks can run on a host whose native
+Realm JNI library is present in the consumed SDK; the Sharekey mobile package provides macOS JNI.
 
-Not all platforms are supported yet.
+## Build prerequisites and artifact checks
 
-Tooling are not yet in place for analyzing benchmark results. This must currently be done either 
-manually or through tools available on each platform. Additional information is found under each
-platform.
+Use JDK 17, the checked-in Gradle 8.14.3 wrapper and Android SDK 35. The shared configuration selects
+Kotlin 2.2.10 and AGP 8.10.0. Java and Kotlin sources target JVM 17.
 
+By default, the build includes `../packages` as a source composite. To test published artifacts,
+first stage the SDK in `packages/build/m2-buildrepo` using the
+[maintainer publication commands](../docs/maintainers/publishing.md#local-candidate-validation).
+Then, from this directory, run:
 
-## Platforms 
-
-### Android
-
-Benchmarks on Android uses [Jetpack Microbenchmarks](https://developer.android.com/studio/profile/microbenchmark-overview).
-
-Running benchmarks:
-```
-./gradlew androidApp:connectedCheck -e no-isolated-storage true
+```sh
+CI=true ./gradlew assemble :androidApp:assembleReleaseAndroidTest :jvmApp:jmhJar
 ```
 
-Benchmarks can also be run from within the IDE as a normal Android Integration Test.
+Setting `CI` selects the staged Maven repository and disables source substitution. The reusable
+integration workflow runs the same tasks. These checks compile the Android instrumentation APK
+and JMH executable JAR; they do not execute benchmarks or establish performance results. Benchmark
+lint tasks remain separate from the repository's default SDK static-analysis gates.
 
-According to the [documentation](https://developer.android.com/studio/profile/microbenchmark-write#benchmark-results), 
-benchmark data should be downloaded to a JSON file here:
-```
-/androidApp/build/outputs/connected_android_test_additional_output/releaseAndroidTest/connected/<deviceId>/<appId>-benchmarkData.json
-```
+## Android
 
-However, this does seem to work. Instead benchmark data can be pulled from the device
-using this command:
-```
-adb pull /sdcard/Android/media/io.realm.kotlin.benchmarks.android.test ./benchmark-data/android/
-```
+Android uses [Jetpack Microbenchmark](https://developer.android.com/topic/performance/benchmarking/microbenchmark-overview).
+The benchmark test APK requires API 32 or newer. Use a physical device for useful performance
+comparisons; the configuration permits emulators and unlocked devices for development, but their
+measurements are not a stable performance baseline.
 
-Profiling benchmarks can be enabled through gradle settings and trace data data will be pulled
-using the above `adb pull` command. See more [here](https://developer.android.com/studio/profile/microbenchmark-profile).
+From this directory, with the staged SDK and a connected device:
 
-There does not seem to be a open source tools available for analyzing and digging deeper into the 
-benchmark results. This must be done manually.
-
-**WARNING:** The Android benchmarks have been configured so they can be run on emulators, but results from
-these should generally not be trusted as variance is extremely high. Prefer running on real devices
-for more accurate results. Read more [here](https://developer.android.com/studio/profile/microbenchmark-overview#benchmark-consistency). If you are running on an emulator, only emulators on API level 29 and below is working due to restrictions with scoped storage.
-
-
-### JVM
-
-Benchmarks on JVM uses [Java Microbenchmarking Harness (JMH)](https://github.com/openjdk/jmh).
-
-Benchmarks can only be run from the commandline:
-```
-./gradlew jvmApp:clean jvmApp:jmh
+```sh
+CI=true ./gradlew :androidApp:connectedReleaseAndroidTest
 ```
 
-Restricting benchmarks can be done using either the `jmh` closure or through Gradle. It accepts a
-regexp pattern for matching
+The benchmark Gradle plugin pulls device results into `androidApp/build/outputs/`. Inspect the
+connected-test additional-output directory for the benchmark JSON. See the Android documentation
+for [benchmark results](https://developer.android.com/topic/performance/benchmarking/microbenchmark-write#benchmark-results)
+and [profiling](https://developer.android.com/topic/performance/benchmarking/microbenchmark-profile).
+Profiling is disabled in `androidApp/build.gradle.kts`; change the instrumentation runner arguments
+when collecting traces deliberately.
+
+## JVM
+
+JVM benchmarks use [JMH](https://github.com/openjdk/jmh) and the
+[JMH Gradle plugin](https://github.com/melix/jmh-gradle-plugin). Run from this directory:
+
+```sh
+CI=true ./gradlew :jvmApp:clean :jvmApp:jmh
 ```
-./gradlew jvmApp:clean jvmApp:jmh -Pjmh.include="BulkWrite*"
+
+To select benchmark classes, pass a regular expression:
+
+```sh
+CI=true ./gradlew :jvmApp:clean :jvmApp:jmh -Pjmh.include=".*BulkWrite.*"
 ```
 
-Data from the benchmark can be found in:
-```
-/jvmApp/build/reports/benchmarks.json
-```
+Results are written to `jvmApp/build/reports/benchmarks.json`. The commands clean previous outputs
+so Gradle cannot reuse an earlier result. For an incremental build, use `--rerun-tasks` when a new
+measurement is required.
 
-Note, that if the benchmark file already exists, JMH will exit successfully without running them
-again. So either run `./gradlew clean` or delete the file manually before each run.
+## Interpreting results
 
-Analyzing benchmark data can be done using [this website](https://jmh.morethan.io/). It also
-supports comparing two different runs.
-
-### iOS
-Not supported yet. 
-
-### macOS
-Not supported yet.
-
-
-## Analyzing data
-
-Currently, example benchmark data for each platform is stored in `/benchmark-data`. It only exists
-there as a starting point for us to create additional tooling and CI support around it. The results
-currently in there are from experimental runs, where no attempts has been made to create a stable
-environment.
-
-And as JMH says:
-
-REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
-why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
-experiments, perform baseline and negative tests that provide experimental control, make sure
-the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
-Do not assume the numbers tell you what you want them to tell.
-
-
+The example files under `benchmark-data/` are historical experimental runs. They are not a
+performance baseline for the migrated SDK. Keep device, OS, JVM, thermal conditions and benchmark
+parameters comparable, use repeated measurements and investigate regressions with profiles before
+drawing conclusions. Building the benchmark artifacts is not evidence of unchanged performance.
