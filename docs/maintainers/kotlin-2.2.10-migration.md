@@ -169,18 +169,24 @@ initialization checks unmanaged/managed accessors, querying a committed object a
 a named `Factory` companion. Seeing the greeting and a live activity after startup confirms those
 checks finished. A successful `assembleRelease` alone does not check reflective companion lookup.
 
-## Scope and remaining release gates
+## Current release scope and historical validation
 
-The migrated and validated scope is the SDK/compiler plus current Android/JVM consumers. This is
-not a Kotlin 2.3 migration, an app dependency switch, or a remote SDK release. Apple C interop and
-metadata compiled, but Apple executables/tests and Windows/Linux JNI were not validated here.
-The historical versioned Gradle fixtures, Compose/KMM examples and benchmarks still have their
-older wrappers and scripts while sharing the upgraded `buildSrc` dependencies. They are not a
-working compatibility matrix and are excluded from default root lint gates. The inherited upstream
-release pipeline is not the Sharekey publication path; see [publishing](publishing.md).
+The initial migration validated the SDK/compiler and selected Android/JVM consumers. Subsequent
+work published immutable [`3.0.0-sharekey.1`](https://github.com/sharekey/realm-kotlin/releases/tag/v3.0.0-sharekey.1)
+on 2026-09-24 and connected the mobile app through Yarn. See [publishing](publishing.md) for the
+release source commit, checksums and tagged CI results; the earlier snapshot/candidate commands and
+counts above remain historical evidence, not instructions to republish the released version.
 
-Application adoption still needs shared encrypted-file tests with Realm JS, lifecycle/migration
-checks against Sharekey data and the CI/release gates in [fork maintenance](fork-maintenance.md).
+The shipped bundle supports Android and macOS JVM. Apple C interop/metadata compiled during migration,
+but Apple executable tests and Windows/Linux JVM native runtime are outside the release bundle.
+This work does not migrate Kotlin to 2.3 or upgrade Realm Core. Gradle 8.3/8.5 consumer fixtures and
+the Realm Java example have since been migrated; Gradle 7.2/7.5 are retired from the active matrix.
+Compose/KMM examples and benchmarks still need separate compatibility work. The inherited upstream
+pipeline is not the Sharekey publication path.
+
+For future SDK upgrades, repeat shared encrypted-file, lifecycle and migration checks against
+Sharekey data as well as the SDK and release gates in [fork maintenance](fork-maintenance.md).
+The SDK tests alone do not establish the application's complete adoption matrix.
 
 ## Local Apple host constraints
 

@@ -86,8 +86,10 @@ The workflow uses macOS 15/Xcode 16.4, Temurin 17, Node 22.17.0, SWIG 4.3.1 (che
 CMake 3.22.1 and Android NDK 27.0.12077973. It builds the macOS JNI library with a minimum deployment
 target of 11.0 and both arm64/x86_64 slices; otherwise CMake can inherit the builder's much newer OS.
 It compiles all four Android ABIs, runs compiler/JVM tests, packs the Maven repository and tests
-independent consumers against the extracted tarball. A Linux job runs the published Android SDK's
-instrumentation tests on an API 35 x86_64 emulator. Static analysis must also pass before publishing.
+independent consumers against the extracted tarball. Linux jobs run the published Android SDK's instrumentation tests on API 35 x86_64 and a focused
+`PlatformInfoTest` on API 25, covering the pre-API-26 clock fallback. The API 35 job also builds the
+minified Android sample against the extracted package, installs it, and checks the rendered greeting
+that follows successful named-companion CRUD assertions. Static analysis must pass before publishing.
 
 [build-mobile-release.sh](../../tools/build-mobile-release.sh) is the macOS build entry point.
 [pack-mobile.py](../../tools/pack-mobile.py) verifies POM coordinates, SDK dependency closure,
@@ -98,6 +100,9 @@ build output is allowed; CI keeps its compiler cache under `build/`.
 [`test-mobile-package.sh`](../../tools/test-mobile-package.sh) extracts into a new temporary directory
 and restores the staging repository on success, failure or interruption. Its failure/repeat-run
 regressions run with `python3 -B -m unittest discover -s tools/tests -v`.
+[`test-minified-android.sh`](../../tools/test-minified-android.sh) requires a connected emulator and the
+packaged Maven repository at `packages/build/m2-buildrepo`; it fails if R8 mapping output or the
+successful CRUD screen is absent.
 The npm package is `@sharekey/realm-kotlin`, marked private to prevent accidental registry publishing.
 It contains no JavaScript entry point or installation scripts. npm is used only to make a tarball.
 

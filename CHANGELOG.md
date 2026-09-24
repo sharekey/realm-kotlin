@@ -1,4 +1,4 @@
-## 3.0.0-sharekey.1-SNAPSHOT (unreleased)
+## 3.0.0-sharekey.1 (2026-09-24)
 
 ### Breaking Changes
 * Build the SDK and compiler plugin with Kotlin 2.2.10 and JVM target 17.

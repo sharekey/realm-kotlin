@@ -21,6 +21,11 @@ MODULES = (
     "library-base", "library-base-android", "library-base-jvm", "plugin-compiler",
 )
 ABIS = ("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+LEGACY_GROUPS = {"io.realm.kotlin", "com.infomaniak.realm.kotlin"}
+PLATFORM_ROOTS = {
+    "cinterop-android": "cinterop", "cinterop-jvm": "cinterop",
+    "library-base-android": "library-base", "library-base-jvm": "library-base",
+}
 
 
 def git(*args):
@@ -65,6 +70,35 @@ def verify_source():
     return source_commit, core_commit
 
 
+def verify_metadata(module, version, metadata, destination):
+    component = metadata["component"]
+    root_module = PLATFORM_ROOTS.get(module, module)
+    gav = tuple(component[key] for key in ("group", "module", "version"))
+    if gav != (GROUP, root_module, version):
+        raise ValueError(f"Unexpected Gradle component in {module}")
+    # KMP platform publications legitimately identify their root component via a relative URL.
+    expected_url = f"../../{root_module}/{version}/{root_module}-{version}.module"
+    if module in PLATFORM_ROOTS:
+        if component.get("url") != expected_url:
+            raise ValueError(f"Unexpected KMP component redirect in {module}")
+    elif "url" in component:
+        raise ValueError(f"Unexpected component redirect in {module}")
+    for variant in metadata["variants"]:
+        for dependency in variant.get("dependencies", []) + variant.get("dependencyConstraints", []):
+            if dependency["group"] in LEGACY_GROUPS:
+                raise ValueError(f"Upstream SDK dependency remains in {module} metadata")
+            if dependency["group"] == GROUP and (
+                dependency["module"] not in MODULES or dependency["version"].get("requires") != version
+            ):
+                raise ValueError(f"SDK dependency missing from bundle: {dependency}")
+        for file in variant.get("files", []):
+            if Path(file["url"]).name != file["url"]:
+                raise ValueError(f"Unexpected artifact path: {file['url']}")
+            content = (destination / file["url"]).read_bytes()
+            if len(content) != file["size"] or hashlib.sha512(content).hexdigest() != file["sha512"]:
+                raise ValueError(f"Artifact does not match Gradle metadata: {file['url']}")
+
+
 def pack(output):
     version = sdk_version()
     source_commit, core_commit = verify_source()
@@ -90,7 +124,7 @@ def pack(output):
                 raise ValueError(f"Unexpected POM coordinates: {gav}")
             for dependency in pom.findall(".//m:dependency", ns):
                 group = dependency.findtext("m:groupId", namespaces=ns)
-                if group in {"io.realm.kotlin", "com.infomaniak.realm.kotlin"}:
+                if group in LEGACY_GROUPS:
                     raise ValueError(f"Upstream SDK dependency remains in {module}")
                 if group == GROUP:
                     artifact = dependency.findtext("m:artifactId", namespaces=ns)
@@ -103,21 +137,7 @@ def pack(output):
                 if file.suffix in {".aar", ".jar", ".module", ".pom"}:
                     shutil.copyfile(file, destination / file.name)
             metadata = json.loads((destination / f"{prefix}.module").read_text())
-            component = metadata["component"]
-            if component["group"] != GROUP or component["version"] != version:
-                raise ValueError(f"Unexpected Gradle component in {module}")
-            for variant in metadata["variants"]:
-                for dependency in variant.get("dependencies", []):
-                    if dependency["group"] == GROUP and (
-                        dependency["module"] not in MODULES or dependency["version"].get("requires") != version
-                    ):
-                        raise ValueError(f"SDK dependency missing from bundle: {dependency}")
-                for file in variant.get("files", []):
-                    if Path(file["url"]).name != file["url"]:
-                        raise ValueError(f"Unexpected artifact path: {file['url']}")
-                    content = (destination / file["url"]).read_bytes()
-                    if len(content) != file["size"] or hashlib.sha512(content).hexdigest() != file["sha512"]:
-                        raise ValueError(f"Artifact does not match Gradle metadata: {file['url']}")
+            verify_metadata(module, version, metadata, destination)
             if not (destination / f"{prefix}-sources.jar").is_file():
                 raise ValueError(f"Missing source artifact for {module}")
 

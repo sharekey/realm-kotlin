@@ -96,6 +96,14 @@ jobs:
 
   android-tests:
     needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api-level: 25
+            test-arguments: -Pandroid.testInstrumentationRunnerArguments.class=io.realm.kotlin.test.android.PlatformInfoTest
+          - api-level: 35
+            test-arguments: ''
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -131,19 +139,22 @@ jobs:
       - name: Test published Android SDK
         uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
         with:
-          api-level: 35
+          api-level: ${{ matrix.api-level }}
           arch: x86_64
           target: google_apis
           disable-animations: true
-          script: ./gradlew -p packages :test-base:connectedAndroidTest -PincludeSdkModules=false -Prealm.kotlin.buildRealmCore=false --no-daemon --stacktrace
+          script: |
+            ./gradlew -p packages :test-base:connectedAndroidTest -PincludeSdkModules=false -Prealm.kotlin.buildRealmCore=false ${{ matrix.test-arguments }} --no-daemon --stacktrace
+            if [[ '${{ matrix.api-level }}' == '35' ]]; then bash tools/test-minified-android.sh; fi
       - name: Save Android reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: mobile-android-reports
+          name: mobile-android-reports-api-${{ matrix.api-level }}
           path: |
             packages/test-base/build/reports/androidTests/
             packages/test-base/build/outputs/androidTest-results/
+            examples/min-android-sample/app/build/outputs/mapping/release/
           retention-days: 14
 
   release:

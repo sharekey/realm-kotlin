@@ -74,6 +74,58 @@ class SourceProvenanceTests(unittest.TestCase):
                 source.write_text(previous)
 
 
+class GradleMetadataTests(unittest.TestCase):
+    version = "3.0.0-sharekey.1"
+
+    def metadata(self, module):
+        component = {"group": pack_mobile.GROUP, "module": module, "version": self.version}
+        return {"component": component, "variants": [{"name": "runtime", "dependencies": []}]}
+
+    def verify(self, module, metadata):
+        pack_mobile.verify_metadata(module, self.version, metadata, Path("unused-no-file-variants"))
+
+    def test_rejects_metadata_copied_from_another_module(self):
+        with self.assertRaisesRegex(ValueError, "Unexpected Gradle component"):
+            self.verify("gradle-plugin", self.metadata("plugin-compiler"))
+
+    def test_platform_component_must_point_to_its_own_kmp_root(self):
+        for module, root in pack_mobile.PLATFORM_ROOTS.items():
+            with self.subTest(module=module):
+                metadata = self.metadata(root)
+                metadata["component"]["url"] = f"../../{root}/{self.version}/{root}-{self.version}.module"
+                self.verify(module, metadata)
+                metadata["component"]["module"] = "gradle-plugin"
+                with self.assertRaisesRegex(ValueError, "Unexpected Gradle component"):
+                    self.verify(module, metadata)
+
+    def test_rejects_a_redirect_to_an_unexpected_artifact(self):
+        metadata = self.metadata("cinterop")
+        metadata["component"]["url"] = "../../unrelated/version/unrelated.module"
+        with self.assertRaisesRegex(ValueError, "Unexpected KMP component redirect"):
+            self.verify("cinterop-jvm", metadata)
+        with self.assertRaisesRegex(ValueError, "Unexpected component redirect"):
+            self.verify("cinterop", metadata)
+
+    def test_rejects_legacy_dependencies_and_constraints(self):
+        for field in ("dependencies", "dependencyConstraints"):
+            for group in pack_mobile.LEGACY_GROUPS:
+                with self.subTest(field=field, group=group):
+                    metadata = self.metadata("library-base")
+                    metadata["variants"][0][field] = [{
+                        "group": group, "module": "cinterop", "version": {"requires": self.version},
+                    }]
+                    with self.assertRaisesRegex(ValueError, "Upstream SDK dependency"):
+                        self.verify("library-base", metadata)
+
+    def test_accepts_own_and_external_dependencies(self):
+        metadata = self.metadata("library-base")
+        metadata["variants"][0]["dependencies"] = [
+            {"group": pack_mobile.GROUP, "module": "cinterop", "version": {"requires": self.version}},
+            {"group": "org.jetbrains.kotlin", "module": "kotlin-stdlib", "version": {"requires": "2.2.10"}},
+        ]
+        self.verify("library-base", metadata)
+
+
 class ConsumerRepositoryTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
