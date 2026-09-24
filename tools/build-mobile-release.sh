@@ -20,7 +20,8 @@ cmake -S packages/cinterop/src/jvm -B packages/cinterop/build/realmMacOsBuild \
   '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64' -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
   '-DCMAKE_CXX_FLAGS=-include cstdlib'
 cmake --build packages/cinterop/build/realmMacOsBuild --parallel 3
-lipo -verify_arch x86_64 arm64 packages/cinterop/build/realmMacOsBuild/librealmc.dylib
+lipo -archs packages/cinterop/build/realmMacOsBuild/librealmc.dylib | \
+  python3 -c 'import sys; assert set(sys.stdin.read().split()) == {"x86_64", "arm64"}'
 
 # Android's externalNativeBuild still builds all four ABIs. buildRealmCore=false
 # skips unrelated Apple native SDK builds and reuses the JVM library built above.
