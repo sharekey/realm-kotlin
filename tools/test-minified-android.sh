@@ -18,7 +18,8 @@ trap 'rm -f "$hierarchy"' EXIT
 # Greeting is assigned only after Platform's managed CRUD assertions complete.
 # Check the rendered result as am start alone may report success before a crash.
 for attempt in {1..15}; do
-  if adb shell uiautomator dump /sdcard/realm-minified-check.xml >/dev/null 2>&1 &&
+  if adb shell rm -f /sdcard/realm-minified-check.xml &&
+     adb shell uiautomator dump /sdcard/realm-minified-check.xml >/dev/null 2>&1 &&
      adb exec-out cat /sdcard/realm-minified-check.xml > "$hierarchy" &&
      python3 - "$hierarchy" "$app" "$api" <<'PY'
 import sys

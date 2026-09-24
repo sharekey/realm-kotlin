@@ -108,7 +108,9 @@ and restores the staging repository on success, failure or interruption. Its fai
 regressions run with `python3 -B -m unittest discover -s tools/tests -v`.
 [`test-minified-android.sh`](../../tools/test-minified-android.sh) requires a connected emulator and the
 packaged Maven repository at `packages/build/m2-buildrepo`; it fails if R8 mapping output or the
-successful CRUD screen is absent.
+successful CRUD screen is absent. The emulator action executes inline commands with `sh`; keep
+its conditionals POSIX-compatible and invoke the Bash helper explicitly. Each UI dump replaces its
+previous output so a failed dump cannot reuse a successful screen from an earlier launch.
 The npm package is `@sharekey/realm-kotlin`, marked private to prevent accidental registry publishing.
 It contains no JavaScript entry point or installation scripts. npm is used only to make a tarball.
 

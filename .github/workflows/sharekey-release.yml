@@ -145,7 +145,7 @@ jobs:
           disable-animations: true
           script: |
             ./gradlew -p packages :test-base:connectedAndroidTest -PincludeSdkModules=false -Prealm.kotlin.buildRealmCore=false ${{ matrix.test-arguments }} --no-daemon --stacktrace
-            if [[ '${{ matrix.api-level }}' == '35' ]]; then bash tools/test-minified-android.sh; fi
+            if [ '${{ matrix.api-level }}' = '35' ]; then bash tools/test-minified-android.sh; fi
       - name: Save Android reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
