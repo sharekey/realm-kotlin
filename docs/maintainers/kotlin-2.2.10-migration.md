@@ -125,7 +125,7 @@ root with the prerequisites in [build and test](build-and-test.md):
 
 ```sh
 ./gradlew -p packages publishCIPackages \
-  -Prealm.kotlin.targets=jvm,android,compilerPlugin,gradlePlugin \
+  -Prealm.kotlin.targets=jvm,android,compilerPlugin,gradlePlugin -Prealm.kotlin.mainHost=true \
   -Prealm.kotlin.buildRealmCore=false \
   -x :library-base:dokkaHtmlPartial
 ./gradlew -p integration-tests/gradle/current \

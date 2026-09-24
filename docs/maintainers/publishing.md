@@ -31,12 +31,18 @@ Use the prerequisites in [build and test](build-and-test.md). With the host JNI 
 
 ```sh
 ./gradlew -p packages :gradle-plugin:validatePlugins publishCIPackages \
-  -Prealm.kotlin.targets=jvm,android,compilerPlugin,gradlePlugin \
+  -Prealm.kotlin.targets=jvm,android,compilerPlugin,gradlePlugin -Prealm.kotlin.mainHost=true \
   -Prealm.kotlin.buildRealmCore=false \
   -x :library-base:dokkaHtmlPartial
 ./gradlew -p integration-tests/gradle/current \
   :multi-platform:jvmTest :single-platform:assembleDebug
 ```
+
+The committed `packages/gradle.properties` sets `realm.kotlin.mainHost=true`; this adds the root
+`cinterop`/`library-base` KMP metadata publications to `publishCIPackages`. The command repeats the
+flag explicitly so a developer's Gradle user properties cannot disable the roots. The release
+workflow uses that committed project setting on a clean runner; its successful tagged build logs
+include both `publishKotlinMultiplatformPublicationToTestRepository` tasks.
 
 Artifacts are staged under `packages/build/m2-buildrepo/com/sharekey/realm/kotlin/`.
 The Gradle publisher configures only the local Test repository. It does not upload to Maven Central,

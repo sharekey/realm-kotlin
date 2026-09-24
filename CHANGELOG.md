@@ -1,6 +1,9 @@
 ## 3.0.0-sharekey.1 (2026-09-24)
 
 ### Breaking Changes
+* Move the Maven group and public Gradle plugin ID from `io.realm.kotlin` to
+  `com.sharekey.realm.kotlin`. Update the buildscript/runtime dependencies and applied plugin ID;
+  Kotlin source imports remain under `io.realm.kotlin`.
 * Build the SDK and compiler plugin with Kotlin 2.2.10 and JVM target 17.
 * Raise the minimum Android API level to 21.
 
