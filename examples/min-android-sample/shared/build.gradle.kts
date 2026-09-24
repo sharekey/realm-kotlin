@@ -9,6 +9,7 @@ plugins {
 version = "1.0"
 
 kotlin {
+    jvmToolchain(17)
     jvm()
     androidTarget()
 
@@ -26,11 +27,14 @@ kotlin {
 }
 
 android {
-    compileSdk = 31
-    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
+    namespace = "io.realm.sample.minandroidsample"
+    compileSdk = 35
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
     defaultConfig {
-        minSdk = 16
-        targetSdk = 31
+        minSdk = 21
     }
 }
 

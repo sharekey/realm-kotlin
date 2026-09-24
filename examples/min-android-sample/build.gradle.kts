@@ -1,5 +1,6 @@
 // This project can only build against local deployed artifacts
 buildscript {
+    val androidGradlePluginVersion = providers.gradleProperty("androidGradlePluginVersion").getOrElse("8.10.0")
     extra["realmVersion"] = file("${rootProject.rootDir.absolutePath}/../../buildSrc/src/main/kotlin/Config.kt")
         .readLines()
         .first { it.contains("const val version") }
@@ -15,8 +16,8 @@ buildscript {
         maven(url = "https://oss.sonatype.org/content/repositories/snapshots")
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:7.1.3")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.20")
+        classpath("com.android.tools.build:gradle:$androidGradlePluginVersion")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.10")
         classpath("io.realm.kotlin:gradle-plugin:${rootProject.extra["realmVersion"]}")
     }
 }

@@ -14,8 +14,9 @@
 }
 -keep,allowobfuscation class ** implements io.realm.kotlin.types.BaseRealmObject
 -keep class ** implements io.realm.kotlin.internal.RealmObjectCompanion
+# Kotlin reflection resolves the static companion field by name, including named companions.
 -keepclassmembers class ** implements io.realm.kotlin.types.BaseRealmObject {
-    **$Companion Companion;
+    static **$* *;
 }
 
 ## Preserve all native method names and the names of their classes.
