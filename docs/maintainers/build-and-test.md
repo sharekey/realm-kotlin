@@ -112,10 +112,16 @@ sources. A successful `detekt` aggregate must not be described as full runtime s
 
 ## Consumer integration and CI
 
-`integration-tests/gradle/current` and the versioned Gradle fixtures are separate builds. They consume
+`integration-tests/gradle/current` and the Gradle 8.3/8.5 fixtures are separate builds. They consume
 published packages and verify plugin/application wiring. After local publication, enter the chosen
 fixture and inspect/run its `assemble` task with its own wrapper and configured repository path.
 Examples and benchmarks are consumers too; they are not included by SDK `test-base` tasks.
+The Gradle 7.2/7.5 fixtures are retained as historical sources and removed from the CI matrix: Kotlin
+2.2.10 requires Gradle 7.6.3 or newer. The active Gradle consumers use Sharekey coordinates and JDK 17. The Gradle 8.3/8.5 fixtures
+retain AGP 8.1 and explicitly upgrade D8/R8 to 8.10.21 for Kotlin 2.2 bytecode.
+The Realm Java interoperability example uses the current wrapper, AGP namespace configuration and
+Realm Java 10.19.0 (the old 10.11.0 transformer does not support AGP 8). This example checks a separate
+SDK interoperability contract; the mobile app does not acquire a Realm Java dependency.
 
 The additional [Sharekey workflow](../../.github/workflows/sharekey.yml) runs static-analysis and
 Gradle plugin validation for `community` pushes and pull requests. It reuses the workflow below and
@@ -128,9 +134,10 @@ explicitly select Temurin JDK 17 and CMake 3.22.1; they run the SDK-scoped root 
 changes were checked locally, not executed on GitHub during this review.
 
 The remaining upstream pipeline is not a verified Sharekey release pipeline. It still includes
-unmigrated Gradle fixtures and consumer builds, old runner selections and repository variables.
-In particular, `VERSION_JAVA` must resolve to 17 for the migrated build; Java 11 step labels do not
-reveal the variable's actual configured value. `VERSION_CMAKE`, `VERSION_SWIG`, `VERSION_NINJA`,
+unmigrated benchmark/native consumer builds, old runner selections and repository variables.
+The reusable integration jobs explicitly select Temurin 17. Other inherited jobs still require
+`VERSION_JAVA=17` and `VERSION_JAVA_DISTRIBUTION=temurin`; Java 11 step labels do not reveal the
+variable's actual configured value. `VERSION_CMAKE`, `VERSION_SWIG`, `VERSION_NINJA`,
 `VERSION_JAVA_DISTRIBUTION` and `VERSION_ANDROID_EMULATOR_API_LEVEL` also need deliberate setup.
 An API 24/25 clock/device check and a 16 KB arm64 check serve different purposes in that matrix.
 Inspect repository variables, credentials, runner versions, artifact paths and publish conditions

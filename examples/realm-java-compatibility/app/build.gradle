@@ -18,18 +18,19 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'org.jetbrains.kotlin.kapt'
-    id "io.realm.kotlin"
+    id "com.sharekey.realm.kotlin"
 }
 
 apply plugin: "realm-android"
 
 android {
-    compileSdkVersion = 31
+    namespace "io.realm.kotlin.demo.javacompatibility"
+    compileSdkVersion = 35
 
     defaultConfig {
         applicationId "io.realm.kotlin.demo.javacompatibility"
         minSdk 21
-        targetSdk 31
+        targetSdk 35
         versionCode 1
         versionName "1.0"
 
@@ -43,8 +44,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility Versions.sourceCompatibilityVersion
-        targetCompatibility Versions.targetCompatibilityVersion
+        sourceCompatibility Versions.INSTANCE.sourceCompatibilityVersion
+        targetCompatibility Versions.INSTANCE.targetCompatibilityVersion
     }
     kotlinOptions {
         jvmTarget = Versions.kotlinJvmTarget
@@ -58,7 +59,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.6.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
 
-    implementation "io.realm.kotlin:library-base:${Realm.version}"
+    implementation "${Realm.group}:library-base:${Realm.version}"
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'

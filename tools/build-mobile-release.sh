@@ -7,6 +7,8 @@ cd "$(dirname "$0")/.."
 export NDK_HOME="$ANDROID_HOME/ndk/27.0.12077973"
 export PATH="$ANDROID_HOME/cmake/3.22.1/bin:$PATH"
 
+python3 tools/pack-mobile.py --check-source
+
 # Generate the same SWIG Java/JNI stubs for both Android and the JVM library.
 ./gradlew -p packages :jni-swig-stub:assemble :gradle-plugin:validatePlugins \
   :gradle-plugin:publishAllPublicationsToTestRepository \
@@ -33,14 +35,5 @@ lipo -archs packages/cinterop/build/realmMacOsBuild/librealmc.dylib | \
   -Prealm.kotlin.buildRealmCore=false --no-daemon --stacktrace
 python3 tools/pack-mobile.py
 
-# Make the independent consumers resolve the contents of the final archive.
-# Only generated staging directories are moved; published bytes are not edited.
-mkdir -p build/mobile-package/unpacked
-tar -xzf "build/mobile-package/sharekey-realm-kotlin-$(python3 tools/pack-mobile.py --version).tgz" \
-  -C build/mobile-package/unpacked
-(cd build/mobile-package/unpacked/package && shasum -a 256 -c SHA256SUMS)
-mv packages/build/m2-buildrepo packages/build/m2-before-package-check
-ln -s "$PWD/build/mobile-package/unpacked/package/maven" packages/build/m2-buildrepo
-./gradlew -p integration-tests/gradle/current \
-  :multi-platform:jvmTest :single-platform:assembleDebug :single-platform:assembleDebugAndroidTest \
-  --no-daemon --stacktrace
+# Test the final archive without retaining a temporary repository in the checkout.
+bash tools/test-mobile-package.sh "build/mobile-package/sharekey-realm-kotlin-$(python3 tools/pack-mobile.py --version).tgz"

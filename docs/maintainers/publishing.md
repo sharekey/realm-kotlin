@@ -53,7 +53,9 @@ not release-ready. See the [migration evidence](kotlin-2.2.10-migration.md).
 
 ## Candidate checks (2026-09-24)
 
-- `:gradle-plugin:validatePlugins` and local publication of all ten modules in the command above passed.
+- `:gradle-plugin:validatePlugins` and local publication of ten modules passed, including
+  `plugin-compiler-shaded`. The mobile tarball contains nine modules: the native-only shaded
+  compiler publication is deliberately excluded.
 - Every staged POM/module file uses Sharekey coordinates for SDK dependencies; no original Realm or
   Infomaniak SDK dependency remains. The Gradle plugin JAR contains the new plugin descriptor.
 - The independent current fixture passed its JVM CRUD test (1 test, no failures/errors/skips), Android
@@ -77,7 +79,8 @@ not release-ready. See the [migration evidence](kotlin-2.2.10-migration.md).
 [Sharekey mobile release](../../.github/workflows/sharekey-release.yml) validates the migration branch
 and releases tags matching `v*-sharekey.*`. Manual runs validate/package; publication requires a tag
 whose value is exactly `v` plus `Realm.version`. Build/test jobs have read-only repository access;
-only the release job has `contents: write`. The inherited build/test workflows remain in place.
+only the release job has `contents: write`. The inherited build/test workflows remain in place; their Gradle 7.2/7.5 consumer lanes are
+retired because Kotlin 2.2.10 requires Gradle 7.6.3 or newer.
 
 The workflow uses macOS 15/Xcode 16.4, Temurin 17, Node 22.17.0, SWIG 4.3.1 (checksum pinned),
 CMake 3.22.1 and Android NDK 27.0.12077973. It builds the macOS JNI library with a minimum deployment
@@ -90,8 +93,37 @@ instrumentation tests on an API 35 x86_64 emulator. Static analysis must also pa
 [pack-mobile.py](../../tools/pack-mobile.py) verifies POM coordinates, SDK dependency closure,
 Gradle metadata hashes, all four Android native libraries and 16 KB ELF segment alignment. It packages
 nine modules, source JARs, original POM/module metadata, licenses, checksums and source/Core provenance.
+Both the pre-build and packaging checks reject modified or untracked SDK/Core sources. Ignored
+build output is allowed; CI keeps its compiler cache under `build/`.
+[`test-mobile-package.sh`](../../tools/test-mobile-package.sh) extracts into a new temporary directory
+and restores the staging repository on success, failure or interruption. Its failure/repeat-run
+regressions run with `python3 -B -m unittest discover -s tools/tests -v`.
 The npm package is `@sharekey/realm-kotlin`, marked private to prevent accidental registry publishing.
 It contains no JavaScript entry point or installation scripts. npm is used only to make a tarball.
+
+### Gradle plugin resolution
+
+The archive contains the plugin implementation, not the optional Gradle Plugin Portal marker POM.
+Load the implementation on the buildscript classpath, then apply its ID without a version. This is
+how the mobile app and `integration-tests/gradle/current` resolve the plugin, including when the
+integration fixture uses a `plugins {}` block in its subprojects. A standalone versioned plugin
+request needs a marker publication and is not supported by this bundle.
+
+```groovy
+// Root build.gradle; replace the version/path to match the installed package.
+buildscript {
+    repositories {
+        maven { url = uri("$rootDir/../node_modules/@sharekey/realm-kotlin/maven") }
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.sharekey.realm.kotlin:gradle-plugin:3.0.0-sharekey.1"
+    }
+}
+// The module containing Realm models:
+apply plugin: "com.sharekey.realm.kotlin"
+```
 
 The bundle includes the JVM modules needed by the compiler plugin and Android unit-test substitution.
 Its native JVM runtime supports macOS only. Linux/Windows JVM runtime, Apple Kotlin/Native SDK
@@ -157,9 +189,9 @@ The old upstream key ID, Nexus profile, Nexus plugin and Sonatype credentials we
 `tools/publish_release.sh` fails immediately; the historical upstream snapshot/deploy tools are not
 supported for Sharekey distribution. The additional `sharekey.yml` workflow runs static analysis
 and plugin validation; it does not replace the inherited CI matrix or publish remotely. Those
-checks alone do not establish native-runtime/release coverage. All inherited build/test jobs remain
-in place; only the two legacy deployment jobs are restricted to the upstream repository because
-their destinations and credentials belong to Realm/MongoDB.
+checks alone do not establish native-runtime/release coverage. The inherited build/test jobs remain, with unsupported Gradle 7.2/7.5 consumer lanes retired.
+The two legacy deployment jobs are restricted to the upstream repository because their destinations
+and credentials belong to Realm/MongoDB.
 
 Maven Central has the simplest consumer setup because downloads need no registry token. However,
 its cost must be checked before choosing it. The [2026-09-08 publisher update](https://central.sonatype.org/news/20260908_publisher_tiers_commercial_use/)

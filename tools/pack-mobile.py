@@ -53,16 +53,21 @@ def verify_elf(content, name):
         raise ValueError(f"No ELF load segments: {name}")
 
 
-def pack(output):
-    version = sdk_version()
-    if git("status", "--porcelain", "--untracked-files=no"):
-        raise ValueError("Commit tracked source changes before packaging")
+def verify_source():
+    if git("status", "--porcelain", "--untracked-files=all", "--ignore-submodules=none"):
+        raise ValueError("Commit or remove modified and untracked SDK/Core sources before packaging")
     source_commit = git("rev-parse", "HEAD")
     core_commit = git("rev-parse", "HEAD:packages/external/core")
     if git("-C", "packages/external/core", "rev-parse", "HEAD") != core_commit:
         raise ValueError("Realm Core checkout does not match the pinned gitlink")
-    if git("-C", "packages/external/core", "status", "--porcelain", "--untracked-files=no"):
-        raise ValueError("Realm Core has modified tracked sources")
+    if git("-C", "packages/external/core", "status", "--porcelain", "--untracked-files=all", "--ignore-submodules=none"):
+        raise ValueError("Realm Core has modified or untracked sources")
+    return source_commit, core_commit
+
+
+def pack(output):
+    version = sdk_version()
+    source_commit, core_commit = verify_source()
     tag = os.environ.get("GITHUB_REF", "")
     if tag.startswith("refs/tags/") and tag != f"refs/tags/v{version}":
         raise ValueError("Release tag and SDK version differ")
@@ -190,12 +195,16 @@ def pack(output):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", action="store_true", help="Print the source SDK version")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--version", action="store_true", help="Print the source SDK version")
+    mode.add_argument("--check-source", action="store_true", help="Verify the clean SDK/Core checkout before building")
     parser.add_argument("--output", type=Path, default=ROOT / "build/mobile-package")
     arguments = parser.parse_args()
     try:
         if arguments.version:
             print(sdk_version())
+        elif arguments.check_source:
+            verify_source()
         else:
             pack(arguments.output)
     except (OSError, ValueError, KeyError, ET.ParseError, subprocess.CalledProcessError) as error:

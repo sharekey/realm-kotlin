@@ -2,15 +2,18 @@
 
 ## How the plugin reaches a consumer
 
-The consumer applies `io.realm.kotlin` to the Gradle module containing its models. In
+The consumer loads `com.sharekey.realm.kotlin:gradle-plugin:<version>` on its buildscript classpath
+and applies `com.sharekey.realm.kotlin` to the Gradle module containing its models. In
 [`RealmPlugin.kt`](../../packages/gradle-plugin/src/main/kotlin/io/realm/kotlin/gradle/RealmPlugin.kt),
 the plugin applies `RealmCompilerSubplugin` and substitutes JVM runtime artifacts for Android unit
 test configurations. Runtime dependencies are still declared by the consumer.
 
 [`RealmCompilerSubplugin.kt`](../../packages/gradle-plugin/src/main/kotlin/io/realm/kotlin/gradle/RealmCompilerSubplugin.kt)
-selects the compiler artifact and reports its plugin ID. Its group and IDs are hard-coded; changing
-`Realm.group` alone is not enough to change all artifact resolution. The Gradle plugin also generates
-`PLUGIN_VERSION` from the SDK version. The unused `CORE_VERSION` constant was removed; the plugin
+selects the compiler artifact using the generated `PLUGIN_GROUP` and `PLUGIN_VERSION` constants
+from Config.kt. The internal compiler plugin ID remains `io.realm.kotlin`; it is separate from the
+public Gradle plugin ID and Maven group. The mobile bundle deliberately omits the marker POM needed
+for standalone `plugins { id("com.sharekey.realm.kotlin") version "..." }` resolution. Its consumers
+use the implementation classpath, as shown in the [publishing guide](publishing.md). The unused `CORE_VERSION` constant was removed; the plugin
 no longer reads Core YAML or carries JAXB/SnakeYAML dependencies.
 
 Inspect Native resolution carefully: the current `getPluginArtifactForNative()` returns the regular

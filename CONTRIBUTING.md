@@ -1,8 +1,10 @@
 # Contributing to Sharekey Realm Kotlin
 
 Start with the [maintainer guide](docs/maintainers/README.md) and [AGENTS.md](AGENTS.md).
-This fork maintains the local-database SDK from upstream `community`; its development version is
-`3.0.0-sharekey.1-SNAPSHOT`. Fork artifacts are currently published only to a local test repository.
+This fork maintains the local-database SDK from upstream `community`; the current release is
+[`3.0.0-sharekey.1`](https://github.com/sharekey/realm-kotlin/releases/tag/v3.0.0-sharekey.1).
+The mobile app installs its Maven repository from the GitHub Release tarball with Yarn. See
+[publishing](docs/maintainers/publishing.md) for local staging and release commands.
 
 ## Contribution policy
 
@@ -73,7 +75,7 @@ The minimal Android sample also checks generated models and consumer ProGuard ru
 installable minified release APK. Historical fixtures, KMM examples and benchmarks need separate
 compatibility work; their older wrappers do not establish support for the migrated SDK.
 
-Remote publication still requires Sharekey-owned coordinates and release configuration. Inspect
+Release publication uses the Sharekey workflow and an immutable version tag. Inspect
 publishing destinations before invoking release tasks; the inherited scripts target upstream services.
 
 ## Code style and dependency versions
