@@ -30,7 +30,7 @@ See [repository map](docs/maintainers/repository-map.md) for source paths and de
 - The SDK Gradle root is **`packages/`**. Its tasks are `:library-base:...`, `:test-base:...`, etc.,
   not `:packages:...`. The repository root orchestrates other builds.
 - Read [build and test](docs/maintainers/build-and-test.md) before running Gradle. The Core submodule
-  must be initialized; even configuration reads files from it.
+  must be initialized before native binding generation or builds.
 - Check `buildSrc/src/main/kotlin/Config.kt` and the relevant Gradle wrapper for actual tool versions.
   The app's Gradle/Kotlin versions are not the SDK's build toolchain.
 - Use the narrowest meaningful tests first. Compiler changes need generated-code and runtime checks;

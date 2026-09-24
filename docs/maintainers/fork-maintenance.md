@@ -15,8 +15,9 @@ Use **`community`** as the base for Sharekey's local-database SDK. The inspected
 | `28182c37` | Adds archived consumer documentation; current community source baseline |
 
 `main` is a divergent history retaining `library-sync` and related APIs. It is not a more complete
-version of the desired local-only SDK. It also contains an Android pre-26 `currentTime()` fix at
-`9cdc4556`; backport that specific change after review instead of merging all of `main`.
+version of the desired local-only SDK. Its Android pre-26 `currentTime()` fix at `9cdc4556` was
+backported during the migration review, preserving millisecond precision. This is an example of
+selective backporting without merging the Sync history.
 
 At initial inspection, `origin` points to `sharekey/realm-kotlin`, the working branch tracks
 `origin/community`, but the local symbolic `origin/HEAD` points to `origin/main`. That symbolic ref
@@ -102,6 +103,9 @@ Realm Swift builds automatically.
 
 ## Adoption gates for the mobile app
 
+The [Sharekey integration guide](sharekey-integration.md) records the inspected app versions, model
+shapes, encrypted storage lifecycle and the SDK/mobile ownership of these checks.
+
 The app's JS and Kotlin SDKs share encrypted Realm files; app-level generation/key/lease coordination
 lives in the mobile repository. Its JS Core headers identify 20.1.0, while current Kotlin Core is
 20.0.1. A Kotlin Core upgrade alone does not upgrade the JS engine.
@@ -109,7 +113,8 @@ lives in the mobile repository. Its JS Core headers identify 20.1.0, while curre
 Before switching coordinates or a Core revision, require:
 
 1. SDK/compiler tests, including default/named/CREATOR companions, plus Android instrumentation.
-2. JS → Kotlin → JS reads/writes with representative app schemas, encrypted and plaintext files.
+2. JS → Kotlin → JS reads/writes with representative app schemas and encrypted files; test the app
+   policy for replacing legacy plaintext generations without enabling plaintext application opens.
 3. Simultaneous opens, native push/channel writes, notification delivery and background work.
 4. Interrupted work, reopening, logout/reset, stale-generation rejection and no hidden file recreation.
 5. Old-file migration and rollback checks for any Core change.

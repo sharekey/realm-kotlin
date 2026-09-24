@@ -10,6 +10,8 @@
 * Preserve named companion fields during R8 shrinking; opening Realm with a `Factory` companion
   no longer fails with `NoSuchFieldException` in a minified Android build.
 * Order platform source archives after generation of the SDK version constant.
+* Correct `RealmInstant.now()` on Android API 25 and below: milliseconds are converted to seconds
+  and nanoseconds instead of being passed as epoch seconds (upstream `9cdc4556`).
 
 ### Compatibility
 * Tested build toolchain: Gradle 8.14.3, JDK 17, AGP 8.10.0, R8 8.10.21 and NDK 27.0.12077973.
@@ -19,6 +21,10 @@
 ### Internal
 * Enable strict IR validation for compiler/JVM model tests; refresh IR fixtures for Kotlin 2.2.
 * Add encrypted round-trip coverage for `Factory` and `CREATOR` companion names.
+* Add an encrypted Channel/User-shaped graph regression for Sharekey's model/query patterns.
+* Remove unused JAXB, SnakeYAML, Android compile dependency and Core-version generation from the
+  Gradle plugin; compiler artifact version selection is unchanged.
+* Limit default root static-analysis gates to SDK packages; keep legacy consumer tasks explicit.
 
 ## 3.0.0 (2024-10-03)
 

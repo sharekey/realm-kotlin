@@ -15,9 +15,12 @@ This repository holds the source code for the Kotlin SDK for Realm, which runs o
 
 ## Sharekey fork maintenance
 
-Use `community` as the baseline for the local-database SDK. This checkout still contains the original
-3.0.0 baseline with the Sharekey Kotlin 2.2.10 adaptation. See the
-[migration record](docs/maintainers/kotlin-2.2.10-migration.md) for the toolchain and validation scope.
+Use `community` as the baseline for the local-database SDK. This checkout adapts upstream Realm
+3.0.0 to Kotlin 2.2.10. The development version, `3.0.0-sharekey.1-SNAPSHOT`, is available only through
+local publication; it has not been released to Maven Central or the Gradle Plugin Portal. The
+publication badges above refer to upstream artifacts. See the
+[migration record](docs/maintainers/kotlin-2.2.10-migration.md) for the toolchain, validation scope and
+[local consumer checks](docs/maintainers/kotlin-2.2.10-migration.md#reproduce-the-packaged-consumer-checks).
 Start with the [maintainer guide](docs/maintainers/README.md) for the module map, runtime, compiler,
 build/test commands and fork strategy. Automated contributors should also read [AGENTS.md](AGENTS.md).
 
@@ -29,7 +32,7 @@ build/test commands and fork strategy. Automated contributors should also read [
 
 # General Availability 
 
-The Realm Kotlin SDK is GA.
+The upstream Realm Kotlin SDK reached GA. This fork's current adaptation is an unreleased development version.
 
 Documentation can be found in the [docs/](docs/README.md) dir.
 
@@ -46,7 +49,9 @@ Guide in the realm-java repo.
 
 ## Installation
 
-Installation differs slightly depending on the type of project. See the details in the documentation:
+The linked installation guides describe upstream releases. To consume this fork during development,
+follow the [local publication and consumer checks](docs/maintainers/kotlin-2.2.10-migration.md#reproduce-the-packaged-consumer-checks).
+Upstream installation differs slightly depending on the type of project:
 
 * [Android](docs/guides/install.md)
 * [Kotlin Multiplatform](docs/guides/install.md)
@@ -250,7 +255,10 @@ Next: head to the full KMM [example](https://github.com/realm/realm-kotlin-sampl
 
 # Using Snapshots
 
-If you want to test recent bugfixes or features that have not been packaged in an official release yet, you can use a **-SNAPSHOT** release of the current development version of Realm via Gradle, available on [Maven Central](https://oss.sonatype.org/content/repositories/snapshots/io/realm/kotlin/)
+The examples below are historical upstream snapshot instructions. Their Sonatype URLs do not host
+this fork's `3.0.0-sharekey.1-SNAPSHOT` artifacts. Use the
+[local publication workflow](docs/maintainers/kotlin-2.2.10-migration.md#reproduce-the-packaged-consumer-checks)
+for Sharekey development; these upstream examples do not establish current repository availability.
 
 ## Groovy 
 ```Gradle
@@ -327,13 +335,15 @@ configurations.all {
 }
 ```
 
-See [Config.kt](buildSrc/src/main/kotlin/Config.kt#L20txt) for the latest version number.
+The fork's local development version is defined in [Config.kt](buildSrc/src/main/kotlin/Config.kt).
 
 # Version Compatibility Matrix
 
-With Kotlin Multiplatform [still in Beta](https://kotlinlang.org/docs/components-stability.html#current-stability-of-kotlin-components) 
-and the Compiler Plugin APIs being experimental, there might be restrictions on what versions of Kotlin the Realm Kotlin
-SDK supports. In the matrix below, you will find the minimum supported version for the dependencies of each Realm release.
+This is the historical upstream compatibility matrix, retained for older releases. It does not
+specify support for the Sharekey development version. The compiler plugin calls Kotlin compiler
+internals, so compatibility must be checked for each compiler version. Use the
+[migration record](docs/maintainers/kotlin-2.2.10-migration.md#toolchain) for the fork's tested build and
+consumer combinations; do not infer support for later Kotlin versions from an upstream `+` entry.
 
 | Realm Version | Requirements                                                                                                                                                                                             |
 |---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -380,7 +390,8 @@ Realm Kotlin 1.3.0 and above *only* works with the new Kotlin Native memory mode
 
 See the `## Compatibility` section of the [CHANGELOG](CHANGELOG.md) for information about exactly which versions are compatible with a given version of Realm Kotlin.
 
-When upgrading older projects, it is important to be aware that certain Gradle properties will control the memory model being used. So, if you have the Gradle properties below defined in your project. Make sure they are set to the values shown: 
+The following properties are historical guidance for older Kotlin/Native projects. They are retained
+for reference and should not be added to a Kotlin 2.2.10 consumer configuration:
 
 ```
 kotlin.native.binary.memoryModel=experimental

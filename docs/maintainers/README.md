@@ -11,6 +11,8 @@ upstream documentation disagrees with them.
 3. [Compiler plugin](compiler.md): Gradle integration, FIR/IR transformations and regression tests.
 4. [Build and test](build-and-test.md): prerequisites, commands, source versus artifact testing.
 5. [Fork maintenance](fork-maintenance.md): branches, compatibility work, publication and app adoption.
+6. [Sharekey integration](sharekey-integration.md): actual mobile model/toolchain contract, ownership
+   boundaries and the checks needed before switching the app.
 
 [AGENTS.md](../../AGENTS.md) is the short operating guide for automated contributors.
 

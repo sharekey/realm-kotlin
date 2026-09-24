@@ -10,7 +10,8 @@ test configurations. Runtime dependencies are still declared by the consumer.
 [`RealmCompilerSubplugin.kt`](../../packages/gradle-plugin/src/main/kotlin/io/realm/kotlin/gradle/RealmCompilerSubplugin.kt)
 selects the compiler artifact and reports its plugin ID. Its group and IDs are hard-coded; changing
 `Realm.group` alone is not enough to change all artifact resolution. The Gradle plugin also generates
-`PLUGIN_VERSION` and `CORE_VERSION` from build inputs.
+`PLUGIN_VERSION` from the SDK version. The unused `CORE_VERSION` constant was removed; the plugin
+no longer reads Core YAML or carries JAXB/SnakeYAML dependencies.
 
 Inspect Native resolution carefully: the current `getPluginArtifactForNative()` returns the regular
 compiler artifact, while `test-base` explicitly requests `plugin-compiler-shaded`. Do not assume that

@@ -22,7 +22,7 @@ Android API 16–20 and JVM 8 consumers are outside this development version's s
 Core remains **20.0.1**, gitlink `d8a68400288245c01be3dcb0ca3bcd4922fee680`.
 No file-format or storage-engine migration is included.
 
-## Validation log
+## Initial migration validation
 
 Host: macOS arm64, JDK 17. Commands run from `packages/` unless stated otherwise.
 
@@ -54,6 +54,47 @@ Host: macOS arm64, JDK 17. Commands run from `packages/` unless stated otherwise
   This verifies SDK/plugin compatibility in a small consumer, not the full React Native app.
 - Root `help` passed. Wrapper scripts and JARs were regenerated with Gradle 8.14.3 for the root,
   SDK, current integration fixture and minimal Android sample.
+
+## Follow-up review (2026-09-24)
+
+The FIR/IR changes and expected dumps were independently compared again: model field/property
+counts, schema constants and managed/unmanaged accessor behavior remain consistent. No additional
+compiler change was needed. The review made four focused improvements:
+
+- Backport upstream `9cdc4556` to convert the pre-26 Android clock's milliseconds into epoch seconds
+  and nanoseconds. Add an Android wall-clock regression. The app does not currently use
+  `RealmInstant`; this repairs SDK behavior within its supported Android range.
+- Remove unused JAXB (and its activation dependency), the Android compile dependency, SnakeYAML,
+  Core-version generation and the unused Gradle-plugin logger. `PLUGIN_VERSION` and compiler
+  artifact selection remain unchanged; Core is still needed for native builds.
+- Scope default root lint gates to SDK packages. Legacy example/benchmark tasks remain explicitly
+  available but unsupported. Pin JDK 17/CMake 3.22.1 in the corresponding static-analysis workflow.
+- Add a synthetic encrypted Channel/User graph with embedded/linked objects, nullable binary and
+  list fields, a participant query, managed updates and close/reopen. This covers patterns used by
+  Sharekey, not Realm JS or concurrent shared-file access.
+
+Checks on the reviewed changes (separate from the initial full-suite counts above):
+
+- `:test-base:jvmTest` filtered to `SharekeyCompatibilityTests`, `NamedCompanionTests` and
+  `RealmInstantTests`: **11 tests, 0 failures/errors/skips**.
+- `:test-base:connectedDebugAndroidTest` filtered to `PlatformInfoTest`,
+  `SharekeyCompatibilityTests` and `NamedCompanionTests`: **4 tests, 0 failures/errors/skips**,
+  on the same API 36 arm64 / 16 KB emulator.
+- The original clock bug reproduced with the pre-fix Android AAR in an isolated host-JVM probe.
+  The rebuilt AAR passed with a stubbed `SDK_INT` of 21, 24, 25, 26 and 36. This exercises both
+  clock branches but **does not constitute API 24/25 device coverage**; that device gate remains.
+- Root `ktlintCheck detekt`, `:gradle-plugin:validatePlugins`, Android AAR assembly and local plugin
+  publication passed. Multiplatform `detekt` tasks still report `NO-SOURCE`; only the JVM plugins
+  receive detekt analysis in the inherited setup. The static-analysis workflow was not run on GitHub.
+- Republished the fixed Android AAR and cleaned Gradle plugin to the local Maven repository, then
+  ran `:multi-platform:jvmTest :single-platform:connectedDebugAndroidTest --refresh-dependencies`
+  in `integration-tests/gradle/current`: **1 JVM + 1 Android test passed**, no failures/errors/skips.
+  Both consumers recompiled, and Gradle stored the configuration cache. The plugin POM contains
+  Kotlin stdlib only; no JAXB dependency remains.
+- Local documentation links/anchors, workflow YAML syntax and `git diff --check` passed.
+
+See [Sharekey integration](sharekey-integration.md) for the inspected mobile contract, retained SDK
+components and the remaining app adoption checks. Core and the mobile dependency were not changed.
 
 ## Compiler adaptation
 
@@ -131,8 +172,9 @@ The migrated and validated scope is the SDK/compiler plus current Android/JVM co
 not a Kotlin 2.3 migration, an app dependency switch, or a remote SDK release. Apple C interop and
 metadata compiled, but Apple executables/tests and Windows/Linux JNI were not validated here.
 The historical versioned Gradle fixtures, Compose/KMM examples and benchmarks still have their
-older toolchains; do not infer support for them from these results. The inherited upstream CI and
-publishing destinations require a separate Sharekey setup before a release.
+older wrappers and scripts while sharing the upgraded `buildSrc` dependencies. They are not a
+working compatibility matrix and are excluded from default root lint gates. The inherited upstream
+CI and publishing destinations require a separate Sharekey setup before a release.
 
 Application adoption still needs shared encrypted-file tests with Realm JS, lifecycle/migration
 checks against Sharekey data and the CI/release gates in [fork maintenance](fork-maintenance.md).

@@ -1,274 +1,111 @@
-# Contributing to Realm Kotlin
+# Contributing to Sharekey Realm Kotlin
 
-## CLA
+Start with the [maintainer guide](docs/maintainers/README.md) and [AGENTS.md](AGENTS.md).
+This fork maintains the local-database SDK from upstream `community`; its development version is
+`3.0.0-sharekey.1-SNAPSHOT`. Fork artifacts are currently published only to a local test repository.
 
-We welcomes all contributions! The only requirement we have is that, like many other projects, we need to have a [Contributor License Agreement](https://en.wikipedia.org/wiki/Contributor_License_Agreement) (CLA) in place before we can accept any external code. Our own CLA is a modified version of the Apache Software Foundation’s CLA.
+## Contribution policy
 
-[Please submit your CLA electronically using our Google form](https://docs.google.com/forms/d/e/1FAIpQLSeQ9ROFaTu9pyrmPhXc-dEnLD84DbLuT_-tPNZDOL9J10tOKQ/viewform) so we can accept your submissions. The GitHub username you file there will need to match that of your Pull Requests. If you have any questions or cannot file the CLA electronically, you can email help@realm.io.
+The upstream MongoDB CLA form and `help@realm.io` address are not a contribution process established
+for this Sharekey fork. Follow the contribution requirements agreed with Sharekey maintainers.
+Preserve upstream copyright and license notices when adapting existing code.
 
+## Obtaining the source
 
-## How to build locally
-
-The Sharekey fork's current toolchain and executed checks are documented in the
-[maintainer build guide](docs/maintainers/build-and-test.md) and
-[Kotlin 2.2.10 migration record](docs/maintainers/kotlin-2.2.10-migration.md).
-
-### Prerequisites
-
-- Swig 4.2.0 or above. On Mac this can be installed using Homebrew: `brew install swig`.
-- Ccache. On Mac this can be installed using Homebrew: `brew install ccache`.
-- CMake 3.18.1 or above. Can be installed through the Android SDK Manager.
-- Java 17.
-- Define environment variables:
-  - `ANDROID_HOME`
-  - `JAVA_HOME`
-  - `NDK_HOME`
-
-### Obtaining the source code 
-
-Checkout repo:
 ```sh
-git clone --recursive  https://github.com/realm/realm-kotlin.git 
+git clone --branch community --recurse-submodules https://github.com/sharekey/realm-kotlin.git
+cd realm-kotlin
 ```
 
-### Windows support
+For an existing checkout, initialize Core at the committed revision:
 
-The repository can be built on Windows, although only for the JVM and Android targets. Beware of the following requirements:
-
-- The repository contains symbolic links that needs to be preserved, see e.g.: https://stackoverflow.com/questions/5917249/git-symbolic-links-in-windows
-
-### Linux support
-
-This repository does currently not support building on Linux from the source code. 
-
-
-### Building and running tests
-
-The SDK and tests modules are located in the same Gradle project in the `packages` folder and can 
-be developed and tested as a single project. For details on publishing and running tests against 
-Maven artifacts see the [Running tests against Maven artifacts](#running-tests-against-maven-artifacts)-section.
-
-The tests are triggered from the IDE or by triggering the specific test tasks across the various
-platforms with:
 ```sh
-cd packages
-./gradlew :test-base:jvmTest :test-base:connectedAndroidTest :test-base:macosTest :test-base:iosTest
-
-```
-You can also the test across all modules on the various platforms with
-```sh
-cd packages
-./gradlew jvmTest connectedAndroidTest macosTest iosTest
-```
-But this will also trigger tests in the SDK modules.
-
-#### Triggering tests from Android Studio
-* Use Android Studio Dolphin or a later version.
-* Go to `Preferences > Build, Execution, Deployment > Build Tools > Gradle`.
-* Under `Gradle JDK`, select the JDK 17 that you installed (not the embedded version).
-
-#### Emulator
-* Create a virtual device through Android Studio Device Manager.
-* Select a system image that does **not** use a `Google APIs` target (usually found under `Arm Images` or `Other Images`). This is to allow root access to the file system.
-* When verifying the configuration, select `Show Advanced Settings` and set `RAM` and `Internal Storage` to at least 2GB, and `SD card` to 1GB.
-* Once created, enable root access from the terminal:
-```sh
-# Enable root acces
-adb root
-
-# Check if it works
-# Enter file system of emulator
-adb shell
-<your_emulator>:/ > cd data/
-<your_emulator>:/ > exit
+git submodule update --init --recursive
 ```
 
-### Running tests against Maven artifacts
+Preserve tracked symlinks, including shared `buildSrc` directories and Android/common test sources.
+Do not use `git submodule update --remote` for a normal build.
 
-When developing or running the test modules against Maven artifacts the SDK dependencies must first
-be published and available through a Maven repository. You can publish the SDK modules to a Maven
-repository in a local folder using the default local and test against these using the following 
-commands:
+## Branch strategy
+
+Base maintenance work on `community`. The `main` branch retains Atlas Sync code and is not the
+baseline for this local-only SDK. Review individual upstream fixes before backporting them; do not
+merge `main` wholesale into `community`. Keep changes focused and retain their source provenance.
+See [fork maintenance](docs/maintainers/fork-maintenance.md) for publication and adoption gates.
+
+## Building and testing
+
+The SDK Gradle root is `packages/`. Read [build and test](docs/maintainers/build-and-test.md) for the
+required JDK, Android SDK/NDK, SWIG, CMake, ccache and platform tools before running Gradle. The
+[Kotlin 2.2.10 migration record](docs/maintainers/kotlin-2.2.10-migration.md) records the combinations
+actually tested, including local Apple-host constraints. Select the same supported JDK in your IDE.
+
+Run the narrowest relevant check from `packages/`, for example:
 
 ```sh
 cd packages
-./gradlew publishAllPublicationsToTestRepository
-./gradlew -PincludeSdkModules=false jvmTest connectedAndroidTest macosTest iosTest 
+./gradlew :plugin-compiler:test
+./gradlew :test-base:jvmTest
+./gradlew :test-base:connectedDebugAndroidTest
 ```
 
-For a detailed description of the project setup see
-the following [Advanced Project Setup](#advanced-project-setup)-section
+JVM tests require a native host library; Android tests require native binaries and a connected
+device/emulator. macOS/iOS tests need a compatible Apple host and tools. Consult the build guide
+for the Windows and Linux source-build limitations instead of assuming every task runs on every host.
+Report exactly which commands, targets and devices passed, and record failures or exclusions.
 
-### Advanced project setup
+## Testing published artifacts
 
-The overall setup of the project is done to support simultaneous development of the SDK and test,
-while still selectively allowing to run tests against Maven artifacts. This is why the tests are
-separated into separate Gradle modules. Due to [issues]((https://youtrack.jetbrains.com/issue/KTIJ-15775/MPP-IDE-Lots-of-red-code-unresolved-references-with-HMPP-and-composite-build)) with IntelliJ/Android Studio
-not being able to resolve symbols in Kotlin Multiplatform projects in Composite Gradle projects
-the various `test-X` modules are placed inside the `packages` projects and only applies the compiler
-plugin to test modules instead of applying our top-level gradle plugin.
+Source tests normally substitute included SDK projects for their Maven dependencies. Published-artifact
+checks instead consume packages from `packages/build/m2-buildrepo`. Follow the
+[packaged-consumer reproduction commands](docs/maintainers/kotlin-2.2.10-migration.md#reproduce-the-packaged-consumer-checks)
+for the current JVM/Android scope, including the local publication exclusions.
 
-To support the various advanced scenarios, the project setup is controlled by the following Gradle 
-properties:
-```sh
-includeSdkModules=true/false     # defaults to true
-includeTestModules=true/false    # defaults to true
-```
-These will control whether or not the SDK (non-test) modules and `test-X` modules will be included 
-in the top level `packages` Gradle project. 
-
-The default is to include both the SDK modules and the test modules so that the SDK and test 
-modules can be developed and tested continuously in one IDE/Gradle project. This uses project 
-dependencies and supports incremental compilation without tedious steps to publish to local 
-Maven repositories.
-
-For testing against Maven artifacts you can publish the SDK artifacts to a local folder with 
-```sh
-./gradlew publishAllPublicationsToTestRepository
-```
-After which the tests can be executed against the Maven artifacts with 
-```sh
-./gradlew -PincludeSdkModules=false jvmTest connectedAndroidTest macosTest iosTest 
-```
-The location of the local Maven repository can be customized with the Gradle property
-```sh
-testRepository=<path relative to 'packages'>        # defaults to 'build/m2-buildrepo'
-```
-
-> **NOTE:** For the above schema to work all test modules should use full Maven coordinate for SDK
-dependencies. These will be substituted with local project dependencies for any module included in
-the project setup.
-
-### Integration tests
-
-Besides the normal SDK test the repository includes a number of integration test projects that acts
-as full consuming test projects. They are located in:
+The current integration fixture is `integration-tests/gradle/current`. After publishing the required
+artifacts, run from the repository root:
 
 ```sh
-./integration-tests
+./gradlew -p integration-tests/gradle/current \
+  :multi-platform:jvmTest :single-platform:connectedDebugAndroidTest
 ```
 
-All these projects requires the SDK modules to be publish to the default local `testRepository` with
+The minimal Android sample also checks generated models and consumer ProGuard rules in an
+installable minified release APK. Historical fixtures, KMM examples and benchmarks need separate
+compatibility work; their older wrappers do not establish support for the migrated SDK.
+
+Remote publication still requires Sharekey-owned coordinates and release configuration. Inspect
+publishing destinations before invoking release tasks; the inherited scripts target upstream services.
+
+## Code style and dependency versions
+
+Follow the surrounding Kotlin style, explicit public API declarations and existing ktlint/detekt rules.
+Avoid wildcard imports. From `packages/`, run the relevant module checks, for example:
 
 ```sh
-cd packages
-./gradlew publishAllPublicationsToTestRepository
+./gradlew :plugin-compiler:ktlintCheck :plugin-compiler:detekt
 ```
 
-After that the various integration test projects can be tested with, ex.:
+Repository-root `ktlintCheck`, `ktlintFormat` and `detekt` cover SDK packages. Explicit tasks for
+legacy examples/benchmarks remain available, but are outside the default gates until migrated.
+See the [build guide](docs/maintainers/build-and-test.md) for exact coverage and CI limitations.
 
-```sh
-cd integration-tests/gradle-plugin-test
-./gradlew integrationTest
-```
+Shared dependency versions live in [Config.kt](buildSrc/src/main/kotlin/Config.kt). Update the owning
+build scripts and maintainer documentation together when changing a supported combination.
 
-# Repository Guidelines
+## Source and test layout
 
-## Branch Strategy
+See the [repository map](docs/maintainers/repository-map.md) for the full source hierarchy. In
+`library-base`, `commonMain` holds shared behavior; the intermediate `jvm` source set feeds Android
+and desktop JVM, while `nativeDarwin` feeds the macOS and iOS targets.
 
-We have three branches for shared development: `master`, `releases` and `next-major`. Tagged releases are only made from `releases`.
+| Path | Tests |
+| --- | --- |
+| `packages/test-base/src/commonTest` | Shared runtime behavior, migrations and notifications |
+| `packages/test-base/src/jvmTest` | Compiler validation and JVM-specific behavior |
+| `packages/test-base/src/androidInstrumentedTest` | Android cases and the symlink to shared tests |
+| `packages/test-base/src/nativeDarwinTest` | Darwin-specific behavior |
+| `packages/plugin-compiler/src/test` | Compiler generation and reviewed IR fixtures |
 
-`master`:
-* Target branch for new features.
-* Cotains the latest publishable state of the SDK.
-* [SNAPSHOT releases](#using-snapshots) are being created for every commit.
-
-`releases`:
-* All tagged releases are made from this branch.
-* Target branch for bug fixes.
-* Every commit should be merged back to master `master`.
-* Minor changes (e.g. to documentation, tests, and the build system) may not affect end users but should still be merged to `releases` to avoid diverging too far from `master` and to reduce the likelihood of merge conflicts.
-
-`next-major`:
-* Target branch for breaking changes that would result in a major version bump.
-
-
-## Code Style
-
-We use the offical [style guide](https://kotlinlang.org/docs/reference/coding-conventions.html) from Kotlin which is enforced using [ktlint](https://github.com/pinterest/ktlint) and [detekt](https://github.com/detekt/detekt).
-
-```sh
-# Call from root folder to check if code is compliant.
-./gradlew ktlintCheck
-./gradlew detekt
-
-# Call from root folder to automatically format all Kotlin code according to the code style rules.
-./gradlew ktlintFormat
-```
-
-A pre-push git hook that automatically will perform these checks is available. You can configure it with the following command:
-
-```sh
-git config core.hooksPath .githooks
-```
-
-> **Note:** ktlint does not allow group imports using `.*`. You can configure IntelliJ to disallow this by going to preferences `Editor > Code Style > Kotlin > Imports` and select "Use single name imports".
-
-## Multiplatform source layout
-
-The multiplatform source hierarchy is structured like this:
-
-```
-- commonMain
-  ├── jvm
-  │   ├── androidMain
-  │   └── jvmMain
-  └── native
-      └── darwin
-          ├── ios
-          |   ├── iosArm64Main
-          |   └── iosX64Main
-          └── macosX64Main
-```
-
-All source sets ending with `Main` is platform specific source sets, while the others are intermediate source sets shared between multiple targets. Only exception is `commonMain` which is kept to follow the Kotlin MPP gradle convention.
-
-All platform differentiated implementations are kept in `platform`-packages with their current package hierarchy, to make it easier to keep track of the level of platform differentiation.
-
-
-## Test organization 
-
-Inside the various `packages/test-X/` modules there are 3 locations the files can be placed in:
-
-* `packages/test-base/src/commonTest`
-* `package/test-base/src/androidAndroidTest`
-* `package/test-base/src/nativeDarwinTest` (macOS)
-
-Ideally all shared tests should be in `commonTest` with specific platform tests in `androidAndroidTest`/`nativeDarwinTest`. However IntelliJ does [not yet allow you to run common tests on Android from within the IDE](https://youtrack.jetbrains.com/issue/KT-46452), so we
-are using the following work-around:
-
-1) All "common" tests should be placed in the `packages/test-X/src/androidAndroidTest/kotlin/io/realm/test/shared` folder. They should be written using only common API's. I.e. use Kotlin Test, not JUnit. This `io.realm.shared` package should only contain tests we plan to eventually move to `commonTest`.
-
-
-2) The `nativeDarwinTest` (macOS) shared tests would automatically be picked up from the `androidAndroidTest` as it is symlinked to `packages/test-X/src/androidAndroidTest/kotlin/io/realm/test/shared`.
-
-
-3) This allows us to run and debug unit tests on both macOS and Android. It is easier getting the imports correctly using the macOS sourceset as the Android code will default to using JUnit.
- 
-
-All platform specific tests should be placed outside the `io.realm.test.shared` package, the default being `io.realm.test`.
-
-
-## Dependencies versions
-
-All dependency versions and other constants we might want to share between projects are defined inside the file 
-`buildSrc/src/main/kotlin/Config.kt`. Any new dependencies should be added to this file as well, so we only have one
-location for these.
-
-
-## Debugging Kotlin/Native Tests
-
-- Location of the kexe file that contains this test - make sure to compile the test beforehand:
-`packages/test-base/build/bin/macos/debugTest/test.kexe`
-- Open:
-`lldb packages/test-base/build/bin/macos/debugTest/test.kexe`
-- Set breakpoints, e.g.:
-`breakpoint set --file realm_coordinator.cpp --line 288`
-- Run ONLY the test you want:
-`r --gtest_filter="io.realm.MigrationTests.deleteOnMigration"`
-- Step into:
-`s`
-- Step over:
-`n`
-- Step out:
-`finish`
+Keep common tests platform-independent and preserve the Android/common symlink. Shared test dependencies
+currently need to be mirrored into `androidInstrumentedTest`; the test-base build script documents
+that wiring. Edit maintained sources and expected fixtures, not generated outputs.
