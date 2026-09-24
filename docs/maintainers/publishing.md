@@ -84,9 +84,12 @@ checks alone do not establish native-runtime/release coverage. All inherited bui
 in place; only the two legacy deployment jobs are restricted to the upstream repository because
 their destinations and credentials belong to Realm/MongoDB.
 
-For this public fork, Maven Central is the preferred destination because consumers need no registry
-token. It requires a Central Portal publisher account, verification of a Sharekey namespace and
-signing material. [Central requirements](https://central.sonatype.org/publish/requirements/) cover
+Maven Central has the simplest consumer setup because downloads need no registry token. However,
+its cost must be checked before choosing it. The [2026-09-08 publisher update](https://central.sonatype.org/news/20260908_publisher_tiers_commercial_use/)
+says Publisher Pro is required from 2026-10-01 for commercial-nature artifacts, independently of
+volume. Company maintenance alone does not establish that classification. Do not assume this fork
+qualifies for free community publishing; confirm its treatment with Sonatype. Central also requires
+a publisher account, verification of a Sharekey namespace and signing material. [Central requirements](https://central.sonatype.org/publish/requirements/) cover
 POM metadata, sources, documentation, checksums and signatures;
 [Portal publishing](https://central.sonatype.org/publish/publish-portal-api/) describes bundle upload.
 No account or signing identity is created implicitly by this repository.
@@ -104,3 +107,66 @@ SDK work behind an explicit opt-in override. Do not make CI depend on an unpubli
 For a release, record the SDK commit/tag, Core SHA, artifact SHA-256 values, publication scope,
 toolchain, executed tests and known limitations. Never replace the bytes of a remotely published
 version; make a new version. Updating this Kotlin fork does not change Realm JS or RealmSwift.
+
+## Registry choice and proposed CI setup (2026-09-24)
+
+| Registry | Consumer setup | Publisher/maintenance tradeoff |
+| --- | --- | --- |
+| Maven Central | Existing `mavenCentral()`; anonymous public downloads | Namespace verification, PGP signatures and release requirements; confirm the applicable publisher tier |
+| GitHub Packages | Explicit Maven URL and reader tokens, including TeamCity/developer machines | Convenient repository/Actions integration; public packages are free, private usage depends on plan/quotas |
+| Existing company Maven registry | Company URL and its access policy | Good fit if already operated; a new server adds storage, backup, availability and access-management work |
+
+Sources: [GitHub authentication](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry),
+[GitHub package billing](https://docs.github.com/en/billing/concepts/product-billing/github-packages),
+[hosted Maven repositories](https://help.sonatype.com/en/maven-repositories.html).
+GitHub Actions can publish a package associated with its repository using `GITHUB_TOKEN`;
+external consumers use suitable credentials, typically a classic PAT with `read:packages`.
+Public repository visibility does not enable anonymous GitHub Maven downloads.
+
+For an independently useful public SDK, Central is technically attractive if its publishing terms
+are acceptable. GitHub Packages is a practical starting point for a team-only distribution workflow
+when public packages and reader-token management are acceptable. Do not deploy a new repository
+server just for this fork without an operational reason. This is a comparison, not a registry change.
+
+If Central is selected, keep SDK publishing in the fork's GitHub Actions and mobile builds in TeamCity.
+Central stores the resulting binaries; it does not run CI. TeamCity only downloads a fixed SDK version
+and needs neither SDK sources nor publishing credentials for ordinary app builds.
+
+One-time publisher setup:
+
+1. Register in [Central Portal](https://central.sonatype.com/) and confirm the organization's publishing
+   classification/plan. Use organizational access rather than making maintenance depend on one person.
+2. Request namespace `com.sharekey`. Add the Portal-issued verification value as a DNS TXT record at
+   `sharekey.com`, then verify the namespace. This covers group `com.sharekey.realm.kotlin`.
+   [Namespace instructions](https://central.sonatype.org/register/namespace/).
+3. Generate a Portal user token. Its generated username/password pair is separate from interactive
+   account credentials. [Token instructions](https://central.sonatype.org/publish/generate-portal-token/).
+4. Create a release PGP signing key, retain its backup and publish the public key to a supported
+   keyserver. Keep the armored private key and passphrase in CI secrets.
+   [Signing instructions](https://central.sonatype.org/publish/requirements/gpg/).
+5. In `sharekey/realm-kotlin`, add the following repository or release-environment secrets through
+   GitHub Settings. [GitHub secret setup](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets).
+
+| Proposed secret | Value |
+| --- | --- |
+| `CENTRAL_USERNAME` | Username from the Portal token |
+| `CENTRAL_PASSWORD` | Password from the same Portal token |
+| `REALM_SIGNING_KEY` | ASCII-armored private PGP signing key |
+| `REALM_SIGNING_PASSWORD` | Signing-key passphrase |
+
+The `REALM_SIGNING_*` environment variables are already read by the local Gradle publisher.
+The `CENTRAL_*` names above are a proposed contract for the future uploader; no current workflow
+reads them. Adding these secrets alone will not turn the existing checks into a release pipeline.
+
+The release workflow still needs implementation: a version tag (for example `v3.0.0-sharekey.1`)
+selects the exact commit, initializes the pinned Core submodule, builds the declared platform set,
+runs SDK/consumer tests, stages Maven artifacts with sources/documentation/metadata, signs them and
+uploads through a Central Portal-compatible publisher. It must await `PUBLISHED` and verify an
+anonymous consumer can resolve the release. Portal upload/status endpoints are documented in the
+[Publisher API](https://central.sonatype.org/publish/publish-portal-api/). Published release bytes
+cannot be replaced; corrections need a new version.
+
+Before implementing the final upload, resolve the candidate packaging gaps described above: JVM
+artifacts needed by the compiler, host JNI coverage, advertised KMP targets and documentation. A local
+macOS build plus secrets is not yet a complete cross-platform release workflow. Neither new accounts,
+secrets, remote publications nor changes to mobile's TeamCity pipeline were made by this guide.
