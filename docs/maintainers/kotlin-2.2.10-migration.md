@@ -27,5 +27,40 @@ No file-format or storage-engine migration is included.
 Host: macOS arm64, JDK 17. Commands run from `packages/` unless stated otherwise.
 
 - Toolchain configuration: `./gradlew help` passed with all SDK and test projects included.
-- Compiler adaptation and runtime verification are in progress; this configuration result is not
-  a claim that the SDK or consuming application has passed its test suites.
+- `:plugin-compiler:test`: **5 passed**, with `-Xverify-ir=error`. IR fixtures were reviewed for
+  the Kotlin 2.2 dump format: schema constants, fields and property declarations are preserved.
+- `:test-base:jvmTest`: **988 tests, 0 failures/errors, 44 existing skips**. The shared models and
+  dynamic compiler tests also enable `-Xverify-ir=error`. This includes the added named-companion
+  regression: managed reads/writes and reopening an encrypted file with `Factory`/`CREATOR`.
+- `:gradle-plugin:validatePlugins`, compiler `ktlintCheck`/`detekt`, and test-base `ktlintCheck` passed.
+  The aggregate test-base `detekt` task reports `NO-SOURCE`; it is not additional test coverage.
+- Android and packaged-consumer verification are in progress.
+
+## Compiler adaptation
+
+The FIR/IR API adaptation was compared with Infomaniak source
+`6d2bf1582a23f2673933e33e09f8111bf8f4f8ab`, not its misleading `3.2.9` tag.
+Kotlin 2.2 unifies receiver and regular argument slots. The changes update argument indices,
+receiver parameters, constructor builders, FIR `coneType` and compiler opt-ins.
+Fake overrides copy only value/context parameters before adding the receiver; a receiver must not
+be copied as an extra regular argument. Persisted names retain strict string handling.
+The original companion lookup and frozen-reference runtime behavior are preserved.
+
+## Local Apple host constraints
+
+The verification host runs macOS 27/Xcode 27 (AppleClang 21). Unchanged Core 20.0.1/S2 cannot build
+against that SDK's C++ library. The local JVM JNI build used the installed macOS 26.5 SDK plus
+compatibility flags, without changing the Core submodule or committing host paths:
+
+```sh
+cmake -S packages/cinterop/src/jvm -B packages/cinterop/build/realmMacOsBuild \
+  -DCMAKE_OSX_SYSROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk \
+  '-DCMAKE_CXX_FLAGS=-Wno-invalid-specialization -include cstdlib'
+```
+
+Run that command from the repository root after initial JVM CMake configuration on such a host.
+The flags address S2's old `std::is_pod` specializations and Core's missing direct `<cstdlib>` include.
+SWIG 4.3.1 and ccache 4.10.2 were built locally from official source archives because the installed
+Homebrew did not recognize macOS 27. CMake 3.22.1 and NDK 27.0.12077973 came from the Android SDK.
+The SDK 27 failure is not evidence of Kotlin compiler incompatibility; this does not claim general
+support for Xcode 27 or verify iOS execution.

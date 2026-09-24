@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstructorCallImpl
+import org.jetbrains.kotlin.ir.expressions.impl.fromSymbolOwner
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.defaultType
@@ -124,14 +125,11 @@ private class RealmModelLowering(private val pluginContext: IrPluginContext) : C
                     type = modelObjectAnnotationClass.defaultType,
                     constructorSymbol = modelObjectAnnotationClass.primaryConstructor!!.symbol
                 ).apply {
-                    putValueArgument(
-                        0,
-                        IrClassReferenceImpl(
-                            startOffset, endOffset,
-                            pluginContext.irBuiltIns.kClassClass.starProjectedType,
-                            irClass.companionObject()!!.symbol,
-                            type
-                        )
+                    arguments[0] = IrClassReferenceImpl(
+                        startOffset, endOffset,
+                        pluginContext.irBuiltIns.kClassClass.starProjectedType,
+                        irClass.companionObject()!!.symbol,
+                        type
                     )
                 }
                 irClass.annotations += modelObjectAnnotation

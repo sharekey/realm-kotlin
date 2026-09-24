@@ -5,7 +5,7 @@
 
 [![Gradle Plugin Portal](https://img.shields.io/maven-metadata/v/https/plugins.gradle.org/m2/io/realm/kotlin/io.realm.kotlin.gradle.plugin/maven-metadata.xml.svg?colorB=ff6b00&label=Gradle%20Plugin%20Portal)](https://plugins.gradle.org/plugin/io.realm.kotlin)
 [![Maven Central](https://img.shields.io/maven-central/v/io.realm.kotlin/gradle-plugin?colorB=4dc427&label=Maven%20Central)](https://search.maven.org/artifact/io.realm.kotlin/gradle-plugin)
-[![Kotlin](https://img.shields.io/badge/kotlin-2.0.20-blue.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.2.10-blue.svg?logo=kotlin)](http://kotlinlang.org)
 [![License](https://img.shields.io/badge/License-Apache-blue.svg)](https://github.com/realm/realm-kotlin/blob/master/LICENSE)
 
 
@@ -16,7 +16,8 @@ This repository holds the source code for the Kotlin SDK for Realm, which runs o
 ## Sharekey fork maintenance
 
 Use `community` as the baseline for the local-database SDK. This checkout still contains the original
-3.0.0 / Kotlin 2.0.20 implementation; the mobile application's Kotlin 2.2.10 adaptation is planned work.
+3.0.0 baseline with the Sharekey Kotlin 2.2.10 adaptation. See the
+[migration record](docs/maintainers/kotlin-2.2.10-migration.md) for the toolchain and validation scope.
 Start with the [maintainer guide](docs/maintainers/README.md) for the module map, runtime, compiler,
 build/test commands and fork strategy. Automated contributors should also read [AGENTS.md](AGENTS.md).
 

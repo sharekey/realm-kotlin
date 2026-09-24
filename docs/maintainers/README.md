@@ -14,17 +14,16 @@ upstream documentation disagrees with them.
 
 [AGENTS.md](../../AGENTS.md) is the short operating guide for automated contributors.
 
-## Baseline inspected on 2026-09-24
+## Development baseline (2026-09-24)
 
 | Item | This repository |
 | --- | --- |
 | Fork | `sharekey/realm-kotlin` |
-| Checked-out branch / source commit | `community` / `28182c37` |
-| SDK / Maven group | `3.0.0` / `io.realm.kotlin` |
-| Kotlin / JVM bytecode target | `2.0.20` / `1.8` |
-| Gradle / Android Gradle Plugin | `7.6` / `7.3.1` |
+| Upstream base | `community` / `28182c37` |
+| SDK / Maven group | `3.0.0-sharekey.1-SNAPSHOT` / `io.realm.kotlin` |
+| Kotlin / JVM bytecode target | `2.2.10` / `17` |
+| Gradle / Android Gradle Plugin | `8.14.3` / `8.10.0` |
 | Realm Core gitlink | `d8a68400288245c01be3dcb0ca3bcd4922fee680` (20.0.1) |
-| Core checkout at inspection | Uninitialized |
 | Local `origin/HEAD` at inspection | `origin/main`, not the maintenance baseline |
 
 Version sources: [Config.kt](../../buildSrc/src/main/kotlin/Config.kt),
@@ -32,17 +31,17 @@ Version sources: [Config.kt](../../buildSrc/src/main/kotlin/Config.kt),
 Do not read these SDK versions as the versions of the consuming mobile app.
 
 `community` is the appropriate base for Sharekey's local database usage. It contains the removal of
-Atlas Sync and the 3.0.0 release. Our Kotlin 2.2.10 compatibility work has **not** been applied to this
-checkout. Its packaging and CI are also still inherited from upstream.
+Atlas Sync and the 3.0.0 release. Sharekey's Kotlin 2.2.10 adaptation is developed on top of that
+baseline. Publication coordinates and the legacy release workflows still need separate fork setup.
 
 ## Evidence and maintenance status
 
-This documentation pass inspected the source and task definitions. It did not initialize Core, build
-the SDK, change dependencies, publish artifacts or run device tests. Commands below are documented
-entry points, not a record of successful runs on the new fork.
+The initial documentation commit describes the upstream baseline. The subsequent migration changes
+and executed checks are recorded in [Kotlin 2.2.10 migration](kotlin-2.2.10-migration.md).
+Commands in the guides alone are not a record of successful runs.
 
 The separate mobile audit identified source provenance and a regression in Infomaniak's published
 3.2.9. The [maintenance guide](fork-maintenance.md) preserves the relevant findings and distinguishes
-them from the behavior of this unmodified community baseline.
+them from the behavior of the Sharekey adaptation.
 
 See [Kotlin 2.2.10 migration](kotlin-2.2.10-migration.md) for the toolchain and executed checks.

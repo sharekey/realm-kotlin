@@ -73,3 +73,15 @@ The mobile audit compiled the original sample with Infomaniak's published Kotlin
 reproduced a named-companion runtime regression. Those results are evidence about that published
 package, not test results for this new Sharekey checkout. Preserve the good compiler coverage while
 avoiding the faulty companion optimization. See [fork maintenance](fork-maintenance.md).
+
+## Kotlin 2.2 API changes
+
+IR calls now have a unified `arguments` list containing dispatch/extension receivers as well as
+regular parameters. Replacing `putValueArgument(0, ...)` with `arguments[0]` blindly can overwrite
+a receiver. Inspect the callee signature and use `IrParameterKind` when filtering parameters.
+FIR resolved type refs expose `coneType`; constructors use the `fromSymbolOwner` extension.
+
+Compiler fixtures and test-base JVM compilations enable `-Xverify-ir=error`. Compare schema constants,
+field declarations and behavior before refreshing an IR fixture: Kotlin updates also change the dump
+format and generated method order. Keep machine paths out of committed fixtures.
+The [migration record](kotlin-2.2.10-migration.md) lists the executed tests and reference source.

@@ -309,3 +309,8 @@ if (HOST_OS.isMacOs()) {
         }
     }
 }
+
+// Validate generated model IR before lowering it to JVM bytecode.
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
+    compilerOptions.freeCompilerArgs.add("-Xverify-ir=error")
+}

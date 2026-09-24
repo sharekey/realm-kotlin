@@ -31,7 +31,7 @@ useful when importing patches. Neither was configured by this documentation pass
 
 | Source | Role |
 | --- | --- |
-| This upstream community checkout | Clean local-only SDK 3.0.0, Kotlin 2.0.20, original Gradle layout |
+| Sharekey development checkout | Community 3.0.0 baseline adapted to Kotlin 2.2.10; original Gradle layout |
 | Infomaniak Maven 3.2.9 | Current native Android SDK in Sharekey mobile, compatible with Kotlin 2.2.10 |
 | Future Sharekey artifact | Controlled publication after reviewed adaptation and validation |
 

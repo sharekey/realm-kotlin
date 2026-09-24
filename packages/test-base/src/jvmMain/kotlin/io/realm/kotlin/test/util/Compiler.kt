@@ -35,6 +35,7 @@ object Compiler {
             @Suppress("deprecation")
             componentRegistrars = plugins
             inheritClassPath = true
-            kotlincArguments = listOf("-Xjvm-default=all-compatibility")
+            jvmTarget = "17"
+            kotlincArguments = listOf("-Xjvm-default=all-compatibility", "-Xverify-ir=error")
         }.compile()
 }

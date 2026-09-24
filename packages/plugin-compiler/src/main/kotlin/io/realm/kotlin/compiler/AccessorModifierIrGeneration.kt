@@ -76,6 +76,7 @@ import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irTemporary
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
@@ -96,13 +97,13 @@ import org.jetbrains.kotlin.ir.types.isDouble
 import org.jetbrains.kotlin.ir.types.isFloat
 import org.jetbrains.kotlin.ir.types.isInt
 import org.jetbrains.kotlin.ir.types.isLong
-import org.jetbrains.kotlin.ir.types.isNullable
 import org.jetbrains.kotlin.ir.types.isShort
 import org.jetbrains.kotlin.ir.types.isString
-import org.jetbrains.kotlin.ir.types.isSubtypeOfClass
 import org.jetbrains.kotlin.ir.types.makeNotNull
 import org.jetbrains.kotlin.ir.util.classId
 import org.jetbrains.kotlin.ir.util.defaultType
+import org.jetbrains.kotlin.ir.util.isNullable
+import org.jetbrains.kotlin.ir.util.isSubtypeOfClass
 import org.jetbrains.kotlin.ir.util.parentAsClass
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
@@ -792,7 +793,7 @@ class AccessorModifierIrGeneration(private val pluginContext: IrPluginContext) {
                             irCall(
                                 objectReferenceProperty.getter!!,
                             ).also {
-                                it.dispatchReceiver = irGet(receiver)
+                                it.arguments[0] = irGet(receiver)
                             },
                             nameHint = "objectReference",
                             irType = objectReferenceType,
@@ -801,25 +802,25 @@ class AccessorModifierIrGeneration(private val pluginContext: IrPluginContext) {
                             callee = getFunction,
                             origin = null
                         ).also {
-                            it.dispatchReceiver = irGetObject(realmObjectHelper.symbol)
+                            it.arguments[0] = irGetObject(realmObjectHelper.symbol)
                         }.apply {
-                            if (typeArgumentsCount > 0) {
-                                putTypeArgument(0, type)
+                            if (typeArguments.isNotEmpty()) {
+                                typeArguments[0] = type
                             }
-                            putValueArgument(0, irGet(objectReferenceType, tmp.symbol))
-                            putValueArgument(1, irString(property.persistedName))
+                            arguments[1] = irGet(objectReferenceType, tmp.symbol)
+                            arguments[2] = irString(property.persistedName)
                         }
                         val storageValue = fromRealmValue?.let {
                             irCall(callee = it).apply {
-                                if (typeArgumentsCount > 0) {
-                                    putTypeArgument(0, type)
+                                if (typeArguments.isNotEmpty()) {
+                                    typeArguments[0] = type
                                 }
-                                putValueArgument(0, managedObjectGetValueCall)
+                                arguments[0] = managedObjectGetValueCall
                             }
                         } ?: managedObjectGetValueCall
                         val publicValue = toPublic?.let {
                             irCall(callee = toPublic).apply {
-                                putValueArgument(0, storageValue)
+                                arguments[0] = storageValue
                             }
                         } ?: storageValue
                         +irIfNull(
@@ -866,46 +867,48 @@ class AccessorModifierIrGeneration(private val pluginContext: IrPluginContext) {
                         irCall(
                             objectReferenceProperty.getter!!,
                         ).also {
-                            it.dispatchReceiver = irGet(receiver)
+                            it.arguments[0] = irGet(receiver)
                         },
                         nameHint = "objectReference",
                         irType = objectReferenceType,
                     )
+                    val params = parameters.filter { it.kind == IrParameterKind.Regular || it.kind == IrParameterKind.Context }
                     val storageValue: IrDeclarationReference = fromPublic?.let {
                         irCall(callee = it).apply {
-                            putValueArgument(0, irGet(setter.valueParameters.first()))
+                            arguments[0] = irGet(params.first())
                         }
-                    } ?: irGet(setter.valueParameters.first())
+                    } ?: irGet(params.first())
                     val realmValue: IrDeclarationReference = toRealmValue?.let {
                         irCall(callee = it).apply {
-                            if (typeArgumentsCount > 0) {
-                                putTypeArgument(0, type)
+                            if (typeArguments.isNotEmpty()) {
+                                typeArguments[0] = type
                             }
-                            putValueArgument(0, storageValue)
+                            arguments[0] = storageValue
                         }
                     } ?: storageValue
                     val cinteropCall = irCall(
                         callee = setFunction,
                     ).also {
-                        it.dispatchReceiver = irGetObject(realmObjectHelper.symbol)
+                        it.arguments[0] = irGetObject(realmObjectHelper.symbol)
                     }.apply {
-                        if (typeArgumentsCount > 0) {
-                            putTypeArgument(0, type)
+                        if (typeArguments.isNotEmpty()) {
+                            typeArguments[0] = type
                         }
-                        putValueArgument(0, irGet(objectReferenceType, tmp.symbol))
-                        putValueArgument(1, irString(property.persistedName))
-                        putValueArgument(2, realmValue)
+                        // Slot zero is the dispatch receiver in Kotlin 2.2's unified argument list.
+                        var argumentIndex = 1
+                        arguments[argumentIndex++] = irGet(objectReferenceType, tmp.symbol)
+                        arguments[argumentIndex++] = irString(property.persistedName)
+                        arguments[argumentIndex] = realmValue
                     }
 
                     +irIfNull(
                         type = pluginContext.irBuiltIns.unitType,
                         subject = irGet(objectReferenceType, tmp.symbol),
                         // Unmanaged object, set the backing field
-                        thenPart =
-                        irSetField(
+                        thenPart = irSetField(
                             irGet(receiver),
                             backingField.symbol.owner,
-                            irGet(setter.valueParameters.first()),
+                            irGet(params.first()),
                         ),
                         // Managed object, return realm value
                         elsePart = cinteropCall
