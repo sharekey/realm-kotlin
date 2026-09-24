@@ -21,9 +21,11 @@ changing every SDK tool version to match it. The isolated consumer checks and th
 [migration validation](kotlin-2.2.10-migration.md).
 
 The app previously consumed Infomaniak 3.2.9. A local Sharekey snapshot was built and manually
-accepted by the mobile maintainer on 2026-09-24, who authorized permanent adoption. Release
-preparation now uses `com.sharekey.realm.kotlin` for both plugin and Maven group; remote publication
-remains pending. Its `android/app/gradle.lockfile` already resolves coroutines 1.10.2, atomicfu 0.29.0
+accepted by the mobile maintainer on 2026-09-24, who authorized permanent adoption. Sharekey uses
+`com.sharekey.realm.kotlin` for both plugin and Maven group. The selected delivery is a versioned
+GitHub Release archive installed as `@sharekey/realm-kotlin` by Yarn; Gradle reads its Maven repository
+and package version. See [publishing](publishing.md) for release status and CI evidence.
+The app's `android/app/gradle.lockfile` already resolves coroutines 1.10.2, atomicfu 0.29.0
 and serialization 1.9.0, matching this fork. Direct coroutines declarations still say 1.10.0;
 the resolved graph is the relevant comparison. Change plugin and runtime coordinates together during
 adoption, preserve `io.realm.kotlin` model imports, and regenerate the app's Android dependency locks.

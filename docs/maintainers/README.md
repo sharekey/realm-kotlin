@@ -13,7 +13,7 @@ upstream documentation disagrees with them.
 5. [Fork maintenance](fork-maintenance.md): branches, compatibility work, publication and app adoption.
 6. [Sharekey integration](sharekey-integration.md): actual mobile model/toolchain contract, ownership
    boundaries and the checks needed before switching the app.
-7. [Publishing](publishing.md): Sharekey coordinates, staging, signing and release prerequisites.
+7. [Publishing](publishing.md): GitHub Release/Yarn delivery, local staging and optional Maven registries.
 
 [AGENTS.md](../../AGENTS.md) is the short operating guide for automated contributors.
 
@@ -23,7 +23,7 @@ upstream documentation disagrees with them.
 | --- | --- |
 | Fork | `sharekey/realm-kotlin` |
 | Upstream base | `community` / `28182c37` |
-| SDK / Maven group | `3.0.0-sharekey.1` / `com.sharekey.realm.kotlin` (unpublished candidate) |
+| SDK / Maven group | `3.0.0-sharekey.1` / `com.sharekey.realm.kotlin` ([release status](publishing.md)) |
 | Kotlin / JVM bytecode target | `2.2.10` / `17` |
 | Gradle / Android Gradle Plugin | `8.14.3` / `8.10.0` |
 | Realm Core gitlink | `d8a68400288245c01be3dcb0ca3bcd4922fee680` (20.0.1) |
@@ -35,8 +35,8 @@ Do not read these SDK versions as the versions of the consuming mobile app.
 
 `community` is the appropriate base for Sharekey's local database usage. It contains the removal of
 Atlas Sync and the 3.0.0 release. Sharekey's Kotlin 2.2.10 adaptation is developed on top of that
-baseline. Own publication coordinates are configured. Mobile distribution uses a Maven repository packaged in a GitHub Release tarball and installed
-with Yarn; see [publishing](publishing.md).
+baseline. Mobile distribution uses Sharekey coordinates and a Maven repository packaged in a GitHub
+Release tarball, installed with Yarn; see [publishing](publishing.md).
 
 ## Evidence and maintenance status
 

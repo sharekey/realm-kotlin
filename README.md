@@ -16,10 +16,11 @@ This repository holds the source code for the Kotlin SDK for Realm, which runs o
 ## Sharekey fork maintenance
 
 Use `community` as the baseline for the local-database SDK. This checkout adapts upstream Realm
-3.0.0 to Kotlin 2.2.10. The release candidate uses `com.sharekey.realm.kotlin` Maven coordinates and
-plugin ID, version `3.0.0-sharekey.1`; source imports remain `io.realm.kotlin`. It is currently
-available through local publication only. See [publishing status](docs/maintainers/publishing.md)
-before configuring a remote consumer. The publication badges above refer to upstream artifacts. See the
+3.0.0 to Kotlin 2.2.10. The Sharekey SDK uses `com.sharekey.realm.kotlin` Maven coordinates and
+plugin ID, version `3.0.0-sharekey.1`; source imports remain `io.realm.kotlin`. Mobile distribution
+packages the Maven repository in a GitHub Release tarball installed with Yarn. See
+[publishing status](docs/maintainers/publishing.md) for release availability and the supported
+Android/macOS JVM scope. The publication badges above refer to upstream artifacts. See the
 [migration record](docs/maintainers/kotlin-2.2.10-migration.md) for the toolchain, validation scope and
 [local consumer checks](docs/maintainers/kotlin-2.2.10-migration.md#reproduce-the-packaged-consumer-checks).
 Start with the [maintainer guide](docs/maintainers/README.md) for the module map, runtime, compiler,
@@ -33,7 +34,8 @@ build/test commands and fork strategy. Automated contributors should also read [
 
 # General Availability 
 
-The upstream Realm Kotlin SDK reached GA. This fork's current adaptation is an unpublished release candidate.
+The upstream Realm Kotlin SDK reached GA. Sharekey's distribution scope and executed checks are
+recorded in [publishing status](docs/maintainers/publishing.md).
 
 Documentation can be found in the [docs/](docs/README.md) dir.
 
@@ -50,8 +52,9 @@ Guide in the realm-java repo.
 
 ## Installation
 
-The linked installation guides describe upstream releases. To consume this fork during development,
-follow the [local publication and consumer checks](docs/maintainers/kotlin-2.2.10-migration.md#reproduce-the-packaged-consumer-checks).
+The linked installation guides describe upstream releases. For this fork's mobile distribution,
+follow the [GitHub Release/Yarn instructions](docs/maintainers/publishing.md). SDK development can use
+the [local publication and consumer checks](docs/maintainers/kotlin-2.2.10-migration.md#reproduce-the-packaged-consumer-checks).
 Upstream installation differs slightly depending on the type of project:
 
 * [Android](docs/guides/install.md)

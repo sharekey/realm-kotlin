@@ -5,7 +5,8 @@ Tracking: [M-3153](https://yt.sharekey.com/issue/M-3153).
 ## Current status
 
 The selected distribution is a GitHub Release tarball consumed by Yarn in the mobile app.
-`3.0.0-sharekey.1` remains a candidate until its tagged workflow succeeds and the release is visible.
+[`3.0.0-sharekey.1`](https://github.com/sharekey/realm-kotlin/releases/tag/v3.0.0-sharekey.1) is published;
+its tagged build, Android tests and automatic upload all passed on 2026-09-24.
 No Maven Central, GitHub Packages or npm registry account is required. The release job uses the
 repository-scoped `GITHUB_TOKEN`; consumers download the public Release asset without credentials.
 The maintainer accepted the preceding local snapshot and authorized adoption on 2026-09-24.
@@ -14,7 +15,7 @@ The maintainer accepted the preceding local snapshot and authorized adoption on 
 | --- | --- |
 | Maven group | `com.sharekey.realm.kotlin` |
 | Gradle plugin ID | `com.sharekey.realm.kotlin` |
-| Candidate version | `3.0.0-sharekey.1` |
+| Release version | `3.0.0-sharekey.1` |
 | Public Kotlin packages / Android namespaces | `io.realm.kotlin` (unchanged) |
 | Kotlin compiler | 2.2.10 |
 | Core | 20.0.1 / `d8a68400288245c01be3dcb0ca3bcd4922fee680` |
@@ -69,7 +70,7 @@ not release-ready. See the [migration evidence](kotlin-2.2.10-migration.md).
   single initializer and native-library hash match this candidate. No packaged app release or new
   device test is claimed for this step. Mobile details: `docs/realm-kotlin-local-testing.md`.
 - Relative documentation file links, workflow YAML parsing and `git diff --check` passed.
-  Remote CI, signing, registry upload and a clean remote consumer remain unverified.
+  These were local candidate checks; the tagged release validation is recorded below.
 
 ## GitHub Release distribution
 
@@ -105,8 +106,9 @@ Release procedure:
 3. Push an annotated tag matching the version, for example `v3.0.0-sharekey.1`.
 4. Wait for all jobs of **Sharekey mobile release** to succeed. The release contains
    `sharekey-realm-kotlin-<version>.tgz`, its `.sha256` and `provenance.json`.
-5. In mobile, pin the exact `/releases/download/v<version>/...tgz` URL in `package.json`, run Yarn,
-   update the matching Gradle version and regenerate Android dependency locks. Commit both lockfiles.
+5. In mobile, pin the exact `/releases/download/v<version>/...tgz` URL in `package.json`, run Yarn
+   and regenerate Android dependency locks. Gradle reads the version from the installed package.
+   Commit `package.json`, `yarn.lock` and the changed Gradle lockfiles together.
 6. Verify a mobile build and the affected device flows. SDK CI does not test the app's authenticated
    JS/Kotlin file-sharing and storage lifecycle.
 
@@ -116,8 +118,32 @@ buildscript plugin. A sibling checkout, `mavenLocal()` publication and registry 
 part of this delivery path. The tag workflow publishes new releases without replacing existing ones.
 Workflow artifacts are temporary job handoffs; the app's dependency URL always targets a Release asset.
 
-Before the first successful run, this describes configured behavior rather than completed remote
-validation. Record the run/release and mobile validation here after publication succeeds.
+## First published release (2026-09-24)
+
+[Release v3.0.0-sharekey.1](https://github.com/sharekey/realm-kotlin/releases/tag/v3.0.0-sharekey.1)
+was produced by [the tagged workflow](https://github.com/sharekey/realm-kotlin/actions/runs/36049141575)
+from SDK commit `e013bf62f8aaeff3299f2d4cefb8d2b901095330` and Core
+`d8a68400288245c01be3dcb0ca3bcd4922fee680`. The complete workflow succeeded, including publication.
+
+- The 19.5 MB archive contains nine Maven modules and 53 package files. Its SHA-256 is
+  `b664c0b48cf9366a33686aaff9aa188dde4b0ca9d89e575d2f6f42717c417a70`.
+  Anonymous download matched the tested Actions artifact byte for byte; every internal checksum passed.
+- Compiler tests: 5 tests, no failures/errors. JVM runtime: 989 tests, no failures/errors, 44 skipped.
+  The independent packaged consumer passed its JVM CRUD test and Android APK assembly checks.
+- Published Android SDK tests on API 35 x86_64: 943 tests, no failures/errors, 44 skipped.
+  Both static-analysis jobs passed. Reports are attached to the workflow run.
+- All four Android ABIs passed 16 KB ELF checks. The universal macOS JVM library has arm64/x86_64
+  slices and a verified minimum OS of 11.0. Linux/Windows JVM and Apple Kotlin/Native publications
+  remain outside this distribution.
+- Mobile installed the public Release URL with immutable Yarn locks, then built an ARM64 debug APK
+  and compiled releaseDev Kotlin using Gradle 9.4.1/AGP 9.2.1. APK signature and 16 KB ZIP alignment
+  passed; it contains one
+  RealmInitializer and the archive's ARM64 library, SHA-256
+  `9975d8ecab7b397ba6c1957c700ed22f3c4a921579c2291265871c50f2ffb17c`.
+  This step did not install the app or build a packaged release APK.
+
+The public `.tgz` URL is the consumer dependency. The release uses neither registry credentials nor
+SDK source compilation in mobile/TeamCity; preserve its assets and issue a new version for changes.
 
 ## Optional Maven registry publishing
 
@@ -209,7 +235,7 @@ The `REALM_SIGNING_*` environment variables are already read by the local Gradle
 The `CENTRAL_*` names above are a proposed contract for the future uploader; no current workflow
 reads them. Adding these secrets alone will not turn the existing checks into a release pipeline.
 
-The release workflow still needs implementation: a version tag (for example `v3.0.0-sharekey.1`)
+A Maven Central publication workflow would still need implementation: a version tag
 selects the exact commit, initializes the pinned Core submodule, builds the declared platform set,
 runs SDK/consumer tests, stages Maven artifacts with sources/documentation/metadata, signs them and
 uploads through a Central Portal-compatible publisher. It must await `PUBLISHED` and verify an
@@ -219,5 +245,5 @@ cannot be replaced; corrections need a new version.
 
 Before implementing the final upload, resolve the candidate packaging gaps described above: JVM
 artifacts needed by the compiler, host JNI coverage, advertised KMP targets and documentation. A local
-macOS build plus secrets is not yet a complete cross-platform release workflow. Neither new accounts,
-secrets, remote publications nor changes to mobile's TeamCity pipeline were made by this guide.
+macOS build plus secrets is not yet a complete cross-platform release workflow. These optional
+registry instructions do not provision accounts, secrets or Maven Central publications.

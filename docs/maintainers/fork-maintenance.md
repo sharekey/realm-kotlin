@@ -33,7 +33,7 @@ useful when importing patches. Neither was configured by this documentation pass
 | --- | --- |
 | Sharekey development checkout | Community 3.0.0 baseline adapted to Kotlin 2.2.10; original Gradle layout |
 | Infomaniak Maven 3.2.9 | Previously shipped native Android SDK, compatible with Kotlin 2.2.10 |
-| Sharekey release candidate | Own coordinates and local artifacts; remote publication still pending |
+| Sharekey SDK | Own coordinates; GitHub Release/Yarn distribution; see [release status](publishing.md) |
 
 The mobile app uses RN 0.87.1, Kotlin 2.2.10, AGP 9.2.1 and Gradle 9.4.1 at the audit date.
 Those are **consumer** versions. The SDK has its own build toolchain. Establish and document both
@@ -82,7 +82,7 @@ compatibility rather than presenting these as confirmed app incidents.
 
 ## Publication contract
 
-Keep `io.realm.kotlin` model/API packages. The candidate uses Maven group and Gradle plugin ID
+Keep `io.realm.kotlin` model/API packages. The SDK uses Maven group and Gradle plugin ID
 `com.sharekey.realm.kotlin`, version `3.0.0-sharekey.1`. Inspect all of:
 
 - `buildSrc/src/main/kotlin/Config.kt` and `io/realm/RealmPublishPlugin.kt`;
@@ -93,8 +93,10 @@ Keep `io.realm.kotlin` model/API packages. The candidate uses Maven group and Gr
 
 The Gradle publisher now stages locally without Realm's Nexus profile or fixed signing-key ID.
 Signing uses Sharekey-supplied environment/user properties. The inherited release script is disabled;
-other legacy distribution scripts are not a release path. Remote publication requires deliberate
-registry and credential setup; see [publishing](publishing.md).
+other legacy distribution scripts are not a release path. The mobile distribution uses a GitHub
+Release tarball containing the Maven repository; Yarn installs it for Gradle consumption. Its workflow
+uses the repository token and public downloads, with no separate registry credentials. See
+[publishing](publishing.md) for release and verification steps.
 
 Each release should record SDK/Core commits, toolchain, unique version, immutable tag, checksums and
 test results. Keep secrets outside tracked files. Assign a maintainer and document which Kotlin,
