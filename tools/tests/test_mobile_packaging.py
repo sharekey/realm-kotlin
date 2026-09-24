@@ -199,6 +199,62 @@ class AndroidElfTests(unittest.TestCase):
                     self.verify(self.elf(abi, segment_type=4), abi)
 
 
+class AndroidGateTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        (self.root / "tools").mkdir()
+        shutil.copy2(TOOLS / "test-published-android.sh", self.root / "tools/test-published-android.sh")
+        gradle = self.root / "gradlew"
+        gradle.write_text('''#!/usr/bin/env bash
+printf '%s\\n' "$@" > sdk-arguments
+exit "${SDK_EXIT:-0}"
+''')
+        gradle.chmod(0o755)
+        (self.root / "tools/test-minified-android.sh").write_text('''#!/usr/bin/env bash
+touch minified-ran
+exit "${MINIFIED_EXIT:-0}"
+''')
+
+    def run_gate(self, api, sdk_exit=0, minified_exit=0):
+        return subprocess.run(
+            ["bash", "tools/test-published-android.sh", str(api)], cwd=self.root,
+            env={**os.environ, "SDK_EXIT": str(sdk_exit), "MINIFIED_EXIT": str(minified_exit)},
+            capture_output=True, text=True,
+        )
+
+    def test_failed_sdk_suite_stops_before_minified_sample_on_both_apis(self):
+        for api in (25, 35):
+            with self.subTest(api=api):
+                self.assertEqual(self.run_gate(api, sdk_exit=23).returncode, 23)
+                self.assertFalse((self.root / "minified-ran").exists())
+
+    def test_api_25_only_runs_the_clock_regression(self):
+        result = self.run_gate(25)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(
+            "-Pandroid.testInstrumentationRunnerArguments.class=io.realm.kotlin.test.android.PlatformInfoTest",
+            (self.root / "sdk-arguments").read_text().splitlines(),
+        )
+        self.assertFalse((self.root / "minified-ran").exists())
+
+    def test_api_35_runs_the_full_suite_then_minified_sample(self):
+        result = self.run_gate(35)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("InstrumentationRunnerArguments.class", (self.root / "sdk-arguments").read_text())
+        self.assertTrue((self.root / "minified-ran").exists())
+
+    def test_failed_minified_sample_fails_the_gate(self):
+        self.assertEqual(self.run_gate(35, minified_exit=19).returncode, 19)
+        self.assertTrue((self.root / "minified-ran").exists())
+
+    def test_unsupported_api_fails_before_running_any_checks(self):
+        self.assertEqual(self.run_gate(26).returncode, 2)
+        self.assertFalse((self.root / "sdk-arguments").exists())
+        self.assertFalse((self.root / "minified-ran").exists())
+
+
 class ConsumerRepositoryTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
