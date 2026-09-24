@@ -1,3 +1,24 @@
+## 3.0.0-sharekey.1-SNAPSHOT (unreleased)
+
+### Breaking Changes
+* Build the SDK and compiler plugin with Kotlin 2.2.10 and JVM target 17.
+* Raise the minimum Android API level to 21.
+
+### Fixed
+* Adapt model generation to Kotlin 2.2 FIR/IR APIs while preserving named companion objects,
+  persisted names and the upstream runtime implementation.
+* Preserve named companion fields during R8 shrinking; opening Realm with a `Factory` companion
+  no longer fails with `NoSuchFieldException` in a minified Android build.
+* Order platform source archives after generation of the SDK version constant.
+
+### Compatibility
+* Tested build toolchain: Gradle 8.14.3, JDK 17, AGP 8.10.0, R8 8.10.21 and NDK 27.0.12077973.
+* Realm Core remains 20.0.1 at `d8a68400288245c01be3dcb0ca3bcd4922fee680`.
+* See the [migration record](docs/maintainers/kotlin-2.2.10-migration.md) for test results and scope.
+
+### Internal
+* Enable strict IR validation for compiler/JVM model tests; refresh IR fixtures for Kotlin 2.2.
+* Add encrypted round-trip coverage for `Factory` and `CREATOR` companion names.
 
 ## 3.0.0 (2024-10-03)
 

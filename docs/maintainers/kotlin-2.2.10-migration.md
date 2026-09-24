@@ -34,7 +34,26 @@ Host: macOS arm64, JDK 17. Commands run from `packages/` unless stated otherwise
   regression: managed reads/writes and reopening an encrypted file with `Factory`/`CREATOR`.
 - `:gradle-plugin:validatePlugins`, compiler `ktlintCheck`/`detekt`, and test-base `ktlintCheck` passed.
   The aggregate test-base `detekt` task reports `NO-SOURCE`; it is not additional test coverage.
-- Android and packaged-consumer verification are in progress.
+- `:test-base:connectedDebugAndroidTest -Pandroid.injected.build.abi=arm64-v8a`: **941 test cases,
+  0 failures/errors, 44 skips** in the XML report. Pixel 10 Pro emulator, Android 16/API 36,
+  arm64, `getconf PAGE_SIZE` = **16384**. The console's final count includes skips again; the
+  checked XML contains 941 `<testcase>` elements.
+- Local `publishCIPackages` passed for JVM, Android, compiler plugins and the Gradle plugin,
+  including multiplatform metadata and five Darwin cinterops. Generated version sources are included
+  in the Android, JVM and common source JARs; all source-archive tasks explicitly depend on generation.
+- Published-artifact CRUD checks in `integration-tests/gradle/current`: **1 JVM + 1 Android test
+  passed**, no failures or skips. Gradle stored the configuration cache successfully.
+- The Android AAR contains all four ABIs (`arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`). Every ELF
+  `LOAD` segment in each `librealmc.so` has alignment **16384**. Runtime execution was on arm64 only.
+- The minimal sample's debug APK, R8 release APK and shared JVM JAR build successfully. The final
+  R8 APK passed its startup CRUD assertions on the same 16 KB emulator, displayed
+  `Hello, Android 36!` and retained a live process with no crash. `zipalign -c -P 16 4` also passed.
+- The same isolated sample passed a release build and startup CRUD check with the mobile app's
+  consumer toolchain: **Gradle 9.4.1, AGP 9.2.1, R8 9.2.14, Kotlin 2.2.10**, using
+  `android.builtInKotlin=false` and `android.newDsl=false`. APK 16 KB zip alignment passed too.
+  This verifies SDK/plugin compatibility in a small consumer, not the full React Native app.
+- Root `help` passed. Wrapper scripts and JARs were regenerated with Gradle 8.14.3 for the root,
+  SDK, current integration fixture and minimal Android sample.
 
 ## Compiler adaptation
 
@@ -45,6 +64,78 @@ receiver parameters, constructor builders, FIR `coneType` and compiler opt-ins.
 Fake overrides copy only value/context parameters before adding the receiver; a receiver must not
 be copied as an extra regular argument. Persisted names retain strict string handling.
 The original companion lookup and frozen-reference runtime behavior are preserved.
+
+## Named companions under R8
+
+The first minified sample launch failed with `NoSuchFieldException: Factory`. The inherited keep
+rule matched only a field literally named `Companion` of type `**$Companion`. R8 renamed the named
+companion field while Kotlin reflection still looked it up by its original name. The consumer rule
+now keeps static nested-class fields on Realm models, covering `Companion`, `Factory`, `CREATOR`
+and other names without changing runtime reflection or generated model APIs. The `Factory` sample
+reproduced the failure before this change and passed after republishing the AAR and refreshing the
+consumer dependency.
+
+## Reproduce the packaged-consumer checks
+
+After the source JVM/Android checks above have built the host JNI library, run from the repository
+root with the prerequisites in [build and test](build-and-test.md):
+
+```sh
+./gradlew -p packages publishCIPackages \
+  -Prealm.kotlin.targets=jvm,android,compilerPlugin,gradlePlugin \
+  -Prealm.kotlin.buildRealmCore=false \
+  -x :library-base:dokkaHtmlPartial
+./gradlew -p integration-tests/gradle/current \
+  :multi-platform:jvmTest :single-platform:connectedDebugAndroidTest
+./gradlew -p examples/min-android-sample \
+  :app:assembleDebug :app:assembleRelease :shared:jvmJar
+```
+
+This writes only to `packages/build/m2-buildrepo`. `buildRealmCore=false` reuses the already built
+host JNI library; it does not fetch native binaries. The Android AAR's four native ABIs were built
+from the pinned Core source. The local JVM JAR contains this host's macOS native library, not a
+complete Windows/Linux release bundle. Skipping `dokkaHtmlPartial` avoids its dependencies on every
+Apple platform binary; the resulting documentation JAR is not release-ready. This exclusion is
+for local consumer verification, not a release command.
+
+After republishing the same SNAPSHOT, add `--refresh-dependencies` to the consumer command. To run
+R8 checks, use the **release** APK on the test emulator:
+
+```sh
+adb -e install -r examples/min-android-sample/app/build/outputs/apk/release/app-release.apk
+adb -e shell am start -W -S -n io.realm.example.minandroidsample.android/.MainActivity
+```
+
+For the mobile toolchain check, run the same sample with a separately installed **Gradle 9.4.1**
+(or the mobile repository's 9.4.1 wrapper), keeping the SDK build on its own 8.14.3 wrapper:
+
+```sh
+gradle -p examples/min-android-sample \
+  -PandroidGradlePluginVersion=9.2.1 \
+  -Pandroid.builtInKotlin=false -Pandroid.newDsl=false \
+  :app:assembleRelease
+```
+
+Check `gradle --version` first for this command. The sample's default AGP remains 8.10.0. The
+legacy AGP opt-outs match Sharekey's current setup; this is not AGP 10 support. The shared library
+uses Kotlin's standard `androidMain` layout and leaves `targetSdk` to the application.
+
+The sample uses a debug signing key solely to make its minified release APK installable. Its screen
+initialization checks unmanaged/managed accessors, querying a committed object and deletion using
+a named `Factory` companion. Seeing the greeting and a live activity after startup confirms those
+checks finished. A successful `assembleRelease` alone does not check reflective companion lookup.
+
+## Scope and remaining release gates
+
+The migrated and validated scope is the SDK/compiler plus current Android/JVM consumers. This is
+not a Kotlin 2.3 migration, an app dependency switch, or a remote SDK release. Apple C interop and
+metadata compiled, but Apple executables/tests and Windows/Linux JNI were not validated here.
+The historical versioned Gradle fixtures, Compose/KMM examples and benchmarks still have their
+older toolchains; do not infer support for them from these results. The inherited upstream CI and
+publishing destinations require a separate Sharekey setup before a release.
+
+Application adoption still needs shared encrypted-file tests with Realm JS, lifecycle/migration
+checks against Sharekey data and the CI/release gates in [fork maintenance](fork-maintenance.md).
 
 ## Local Apple host constraints
 

@@ -112,7 +112,9 @@ runner versions, artifact paths and publish conditions before using it for Share
 Markdown-only pull requests are ignored by its PR trigger; documentation checks need a separate path.
 
 The commented `debugMinified` setup in `test-base` is not enabled by simply passing a property.
-A normal release build is not proof that R8/obfuscation works.
+A normal release build is not proof that R8/obfuscation works. The minimal Android sample now has an
+installable minified release variant that runs Realm assertions during startup; use the commands
+and publication exclusions in the [migration record](kotlin-2.2.10-migration.md).
 
 ## Recording a result
 

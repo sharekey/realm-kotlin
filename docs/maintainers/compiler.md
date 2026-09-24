@@ -63,6 +63,9 @@ Do not present an app build as proof that every supported schema compiles correc
 - [`test-base/src/jvmTest/.../compiler`](../../packages/test-base/src/jvmTest/kotlin/io/realm/kotlin/test/compiler)
   contains model validation, primary key, persisted-name, collection, cyclic and backlink tests.
 - `test-base/src/commonTest` verifies runtime semantics of compiled models across targets.
+- [`examples/min-android-sample`](../../examples/min-android-sample) runs managed CRUD with a named
+  companion in a minified release APK. Use it to check generated code together with the SDK's
+  consumer ProGuard rules; source tests without R8 do not exercise reflective field renaming.
 
 When a compiler update changes an IR dump, inspect the structural difference and execute the
 generated model; do not merely replace the expected dump. Verify managed database operations as well
