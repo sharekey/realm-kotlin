@@ -73,7 +73,9 @@ The old upstream key ID, Nexus profile, Nexus plugin and Sonatype credentials we
 `tools/publish_release.sh` fails immediately; the historical upstream snapshot/deploy tools are not
 supported for Sharekey distribution. The additional `sharekey.yml` workflow runs static analysis
 and plugin validation; it does not replace the inherited CI matrix or publish remotely. Those
-checks alone do not establish native-runtime/release coverage.
+checks alone do not establish native-runtime/release coverage. All inherited build/test jobs remain
+in place; only the two legacy deployment jobs are restricted to the upstream repository because
+their destinations and credentials belong to Realm/MongoDB.
 
 For this public fork, Maven Central is the preferred destination because consumers need no registry
 token. It requires a Central Portal publisher account, verification of a Sharekey namespace and

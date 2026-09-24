@@ -1354,8 +1354,10 @@ jobs:
              test-android-packages-emulator,
              package-all-artifacts
            ]
+    # Upstream deployment credentials and destinations only apply in the upstream repository.
     if: |
       always() &&
+      github.repository == 'realm/realm-kotlin' &&
       !cancelled() &&
       endsWith(needs.check-cache.outputs.version-label, '-SNAPSHOT') &&
       !contains(needs.*.result, 'failure') &&
@@ -1415,8 +1417,10 @@ jobs:
               test-android-packages-emulator,
               package-all-artifacts
             ]
+    # Upstream deployment credentials and destinations only apply in the upstream repository.
     if: |
       always() &&
+      github.repository == 'realm/realm-kotlin' &&
       !cancelled() &&
       !endsWith(needs.check-cache.outputs.version-label, '-SNAPSHOT') &&
       !contains(needs.*.result, 'failure') &&
