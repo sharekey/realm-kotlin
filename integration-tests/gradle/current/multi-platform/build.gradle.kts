@@ -21,6 +21,7 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(17)
     jvm()
 
     val hostOs = System.getProperty("os.name")

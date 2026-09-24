@@ -21,7 +21,12 @@ plugins {
     id("io.realm.kotlin")
 }
 
+kotlin {
+    jvmToolchain(17)
+}
+
 android {
+    namespace = "io.realm.test.singleplatform"
     compileSdk = Versions.Android.compileSdkVersion
 
     defaultConfig {
@@ -42,9 +47,6 @@ android {
     compileOptions {
         sourceCompatibility = Versions.sourceCompatibilityVersion
         targetCompatibility = Versions.targetCompatibilityVersion
-    }
-    kotlinOptions {
-        jvmTarget = Versions.kotlinJvmTarget
     }
 }
 

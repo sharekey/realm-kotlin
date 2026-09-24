@@ -831,7 +831,9 @@ abstract class CmakeVersionProvider : ValueSource<String, ValueSourceParameters.
     }
 }
 
-// enable execution optimizations for generateSdkVersionConstant
-afterEvaluate {
-    tasks.getByName("sourcesJar").dependsOn(generateSdkVersionConstant)
+// Every platform source archive includes the generated SDK version.
+tasks.matching {
+    it.name == "sourcesJar" || it.name.endsWith("SourcesJar")
+}.configureEach {
+    dependsOn(generateSdkVersionConstant)
 }
