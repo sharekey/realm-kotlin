@@ -37,15 +37,11 @@ java {
 repositories {
     google()
     gradlePluginPortal()
+    mavenCentral()
 }
 
 
-// Setup dependencies for building the buildScript.
-buildscript {
-    dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.kotlin}")
-    }
-}
+// Keep buildSrc on the Kotlin compiler embedded in Gradle; the SDK uses Versions.kotlin.
 
 // Setup dependencies for the buildscripts consuming the precompiled plugins
 // These seem to propagate to all projects including the buildSrc/ directory, which also means

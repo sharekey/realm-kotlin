@@ -23,15 +23,10 @@ plugins {
     id("org.jetbrains.kotlin.multiplatform")
     id("com.android.library")
     id("realm-publisher")
+    id("org.jetbrains.kotlinx.atomicfu") version Versions.atomicfu
 }
 
-buildscript {
-    dependencies {
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:${Versions.atomicfu}")
-    }
-}
 
-apply(plugin = "kotlinx-atomicfu")
 // AtomicFu cannot transform JVM code. Throws
 // ClassCastException: org.objectweb.asm.tree.InsnList cannot be cast to java.lang.Iterable
 project.extensions.configure(kotlinx.atomicfu.plugin.gradle.AtomicFUPluginExtension::class) {
@@ -146,9 +141,15 @@ kotlin {
             // ... and def file does not support using environment variables
             // https://github.com/JetBrains/kotlin-native/issues/3631
             // so resolving paths through gradle
-            kotlinOptions.freeCompilerArgs += when (buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesIosSimulatorX86Debug
-                BuildType.RELEASE -> nativeLibraryIncludesIosSimulatorX86Release
+            compileTaskProvider.configure {
+                compilerOptions {
+                    freeCompilerArgs.addAll(
+                        when (buildType) {
+                            BuildType.DEBUG -> nativeLibraryIncludesIosSimulatorX86Debug
+                            BuildType.RELEASE -> nativeLibraryIncludesIosSimulatorX86Release
+                        }
+                    )
+                }
             }
         }
     }
@@ -159,9 +160,15 @@ kotlin {
                 packageName = "realm_wrapper"
                 includeDirs("$absoluteCorePath/src/")
             }
-            kotlinOptions.freeCompilerArgs += when (buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesIosSimulatorArm64Debug
-                BuildType.RELEASE -> nativeLibraryIncludesIosSimulatorArm64Release
+            compileTaskProvider.configure {
+                compilerOptions {
+                    freeCompilerArgs.addAll(
+                        when (buildType) {
+                            BuildType.DEBUG -> nativeLibraryIncludesIosSimulatorArm64Debug
+                            BuildType.RELEASE -> nativeLibraryIncludesIosSimulatorArm64Release
+                        }
+                    )
+                }
             }
         }
     }
@@ -179,9 +186,15 @@ kotlin {
             // ... and def file does not support using environment variables
             // https://github.com/JetBrains/kotlin-native/issues/3631
             // so resolving paths through gradle
-            kotlinOptions.freeCompilerArgs += when (buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesIosArm64Debug
-                BuildType.RELEASE -> nativeLibraryIncludesIosArm64Release
+            compileTaskProvider.configure {
+                compilerOptions {
+                    freeCompilerArgs.addAll(
+                        when (buildType) {
+                            BuildType.DEBUG -> nativeLibraryIncludesIosArm64Debug
+                            BuildType.RELEASE -> nativeLibraryIncludesIosArm64Release
+                        }
+                    )
+                }
             }
         }
     }
@@ -199,9 +212,15 @@ kotlin {
             // ... and def file does not support using environment variables
             // https://github.com/JetBrains/kotlin-native/issues/3631
             // so resolving paths through gradle
-            kotlinOptions.freeCompilerArgs += when(buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesMacosUniversalDebug
-                BuildType.RELEASE -> nativeLibraryIncludesMacosUniversalRelease
+            compileTaskProvider.configure {
+                compilerOptions {
+                    freeCompilerArgs.addAll(
+                        when (buildType) {
+                            BuildType.DEBUG -> nativeLibraryIncludesMacosUniversalDebug
+                            BuildType.RELEASE -> nativeLibraryIncludesMacosUniversalRelease
+                        }
+                    )
+                }
             }
         }
     }
@@ -212,9 +231,15 @@ kotlin {
                 packageName = "realm_wrapper"
                 includeDirs("$absoluteCorePath/src/")
             }
-            kotlinOptions.freeCompilerArgs += when(buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesMacosUniversalDebug
-                BuildType.RELEASE -> nativeLibraryIncludesMacosUniversalRelease
+            compileTaskProvider.configure {
+                compilerOptions {
+                    freeCompilerArgs.addAll(
+                        when (buildType) {
+                            BuildType.DEBUG -> nativeLibraryIncludesMacosUniversalDebug
+                            BuildType.RELEASE -> nativeLibraryIncludesMacosUniversalRelease
+                        }
+                    )
+                }
             }
         }
     }
@@ -776,7 +801,7 @@ val generateSdkVersionConstant: Task = tasks.create("generateSdkVersionConstant"
         )
     }
 }
-tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>> {
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
     dependsOn(generateSdkVersionConstant)
 }
 

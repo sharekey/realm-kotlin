@@ -7,9 +7,9 @@
   application; do not apply the mobile repository's Yarn commands or TypeScript conventions here.
 - `community` is the local-database maintenance baseline. `main` retains Atlas Sync code. Do not merge
   `main` wholesale into `community`; review individual fixes instead.
-- The initial documented checkout is upstream `community` at `28182c37`: Realm 3.0.0, Kotlin 2.0.20.
-  The application's Infomaniak 3.2.9 / Kotlin 2.2.10 adaptation is not present yet. Check current source
-  before treating this snapshot as a supported release.
+- The fork starts from upstream `community` at `28182c37` (Realm 3.0.0). Kotlin 2.2.10 migration
+  work uses the distinct `3.0.0-sharekey.1-SNAPSHOT` development version. See
+  [migration validation](docs/maintainers/kotlin-2.2.10-migration.md) for the tested scope.
 
 ## Find the owning layer
 

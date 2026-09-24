@@ -1,17 +1,16 @@
 # Building and testing the SDK
 
-These commands were checked against the source layout and task definitions at community `28182c37`.
-They were not executed during the documentation pass. The checkout initially had no initialized Core
-submodule, and the inherited toolchain has not yet been upgraded for Sharekey's mobile app.
+The SDK Gradle root is `packages/`. See [migration validation](kotlin-2.2.10-migration.md)
+for executed checks; command examples elsewhere in this guide are not proof that a target passed.
 
 ## Prerequisites and the correct Gradle root
 
 Use [Config.kt](../../buildSrc/src/main/kotlin/Config.kt) and the wrappers as the version authority.
-The current SDK build uses Gradle 7.6, Kotlin 2.0.20, AGP 7.3.1, compile/target SDK 33, Build Tools
-33.0.0 and NDK 23.2.8568313. Its JVM bytecode target is 1.8. The upstream contributing guide specifies
-JDK 11, SWIG 4.2.0+, CMake 3.18.1+ and ccache, with `JAVA_HOME`, `ANDROID_HOME` and `NDK_HOME` set.
-Apple targets additionally need the matching Xcode/platform tools. These are inherited build inputs,
-not a recommendation to downgrade the consuming mobile application.
+The development build uses Kotlin 2.2.10, Gradle 8.14.3, JDK/JVM target 17, AGP 8.10.0,
+R8 8.10.21, compile/target SDK 35, Build Tools 35.0.0 and NDK 27.0.12077973. Android minimum
+SDK is 21. SWIG 4.2.0+, CMake 3.18.1+ and ccache must be on `PATH`; set `JAVA_HOME`,
+`ANDROID_HOME` and `NDK_HOME`. Apple targets additionally need compatible Xcode/platform tools.
+`buildSrc` uses Gradle's embedded Kotlin compiler; SDK/compiler-plugin sources use `Versions.kotlin`.
 
 From the repository root, prepare the **pinned** Core revision:
 

@@ -44,3 +44,5 @@ entry points, not a record of successful runs on the new fork.
 The separate mobile audit identified source provenance and a regression in Infomaniak's published
 3.2.9. The [maintenance guide](fork-maintenance.md) preserves the relevant findings and distinguishes
 them from the behavior of this unmodified community baseline.
+
+See [Kotlin 2.2.10 migration](kotlin-2.2.10-migration.md) for the toolchain and executed checks.
