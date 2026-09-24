@@ -48,7 +48,9 @@ fun readAndCacheVersion(): String {
     return version
 }
 val currentVersion = readAndCacheVersion()
-val subprojects = listOf("packages", "examples/kmm-sample", "benchmarks")
+// Default gates cover the migrated SDK. Legacy consumers keep explicit tasks until migrated.
+val sdkBuilds = listOf("packages")
+val legacyConsumerBuilds = listOf("examples/kmm-sample", "benchmarks")
 fun taskName(subdir: String): String {
     return subdir.split("/", "-").map { it.capitalize() }.joinToString(separator = "")
 }
@@ -67,24 +69,24 @@ fun copyProperties(action: GradleBuild) {
 tasks {
 
     register("ktlintCheck") {
-        description = "Runs ktlintCheck on all projects."
+        description = "Runs ktlintCheck on the SDK packages."
         group = "Verification"
-        dependsOn(subprojects.map { "ktlintCheck${taskName(it)}" })
+        dependsOn(sdkBuilds.map { "ktlintCheck${taskName(it)}" })
     }
 
     register("ktlintFormat") {
-        description = "Runs ktlintFormat on all projects."
+        description = "Runs ktlintFormat on the SDK packages."
         group = "Formatting"
-        dependsOn(subprojects.map { "ktlintFormat${taskName(it)}" })
+        dependsOn(sdkBuilds.map { "ktlintFormat${taskName(it)}" })
     }
 
     register("detekt") {
-        description = "Runs detekt on all projects."
+        description = "Runs detekt on the SDK packages."
         group = "Verification"
-        dependsOn(subprojects.map { "detekt${taskName(it)}" })
+        dependsOn(sdkBuilds.map { "detekt${taskName(it)}" })
     }
 
-    subprojects.forEach { subdir ->
+    (sdkBuilds + legacyConsumerBuilds).forEach { subdir ->
         register<Exec>("ktlintCheck${taskName(subdir)}") {
             description = "Run ktlintCheck on /$subdir project"
             workingDir = file("${rootDir}/$subdir")

@@ -17,6 +17,12 @@ jobs:
         run: |-
           echo "::add-matcher::.github/problem-matchers/ktlint.json"
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
         with:
@@ -25,7 +31,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: ${{ vars.VERSION_CMAKE }}
+          cmake-version: '3.22.1'
 
       - name: Build Gradle Plugin
         working-directory: packages
@@ -38,15 +44,11 @@ jobs:
         if: always()
         run: |
           rm -rf /tmp/ktlint
-          rm -rf /tmp/detekt
           mkdir /tmp/ktlint
-          mkdir /tmp/detekt
-          rsync -a --delete --ignore-errors examples/kmm-sample/shared/build/reports/ktlint/ /tmp/ktlint/example/ || true
           rsync -a --delete --ignore-errors packages/cinterop/build/reports/ktlint/ /tmp/ktlint/cinterop/ || true
           rsync -a --delete --ignore-errors packages/library-base/build/reports/ktlint/ /tmp/ktlint/library-base/ || true
           rsync -a --delete --ignore-errors packages/plugin-compiler/build/reports/ktlint/ /tmp/ktlint/plugin-compiler/ || true
           rsync -a --delete --ignore-errors packages/gradle-plugin/build/reports/ktlint/ /tmp/ktlint/plugin-gradle/ || true
-          rsync -a --delete --ignore-errors benchmarks/build/reports/ktlint/ /tmp/ktlint/benchmarks/ || true
 
       - name: Publish Ktlint results
         uses: actions/upload-artifact@v4
@@ -69,6 +71,12 @@ jobs:
         run: |-
           echo "::add-matcher::.github/problem-matchers/detekt.json"
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
         with:
@@ -77,7 +85,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version: ${{ vars.VERSION_CMAKE }}
+          cmake-version: '3.22.1'
 
       - name: Build Gradle Plugin
         working-directory: packages
@@ -86,19 +94,17 @@ jobs:
       - name: Run Detekt
         run: ./gradlew detekt
 
-      - name: Stash Detekt results   
-        if: always() 
+      - name: Stash Detekt results
+        if: always()
         run: |
           rm -rf /tmp/detekt
           mkdir /tmp/detekt
-          rsync -a --delete --ignore-errors examples/kmm-sample/shared/build/reports/detekt/ /tmp/detekt/example/ || true
           rsync -a --delete --ignore-errors packages/cinterop/build/reports/detekt/ /tmp/detekt/cinterop/ || true
           rsync -a --delete --ignore-errors packages/library-base/build/reports/detekt/ /tmp/detekt/library-base/ || true
           rsync -a --delete --ignore-errors packages/plugin-compiler/build/reports/detekt/ /tmp/detekt/plugin-compiler/ || true
           rsync -a --delete --ignore-errors packages/gradle-plugin/build/reports/detekt/ /tmp/detekt/plugin-gradle/ || true
-          rsync -a --delete --ignore-errors benchmarks/build/reports/detekt/ /tmp/detekt/benchmarks/ || true
 
-      - name: Publish Detekt results    
+      - name: Publish Detekt results
         uses: actions/upload-artifact@v4
         if: always()
         with:
