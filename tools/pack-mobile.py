@@ -151,7 +151,9 @@ def pack(output):
         }
         (package / "package.json").write_text(json.dumps(manifest, indent=2) + "\n")
         provenance = {
-            "group": GROUP, "version": version, "kotlin": "2.2.10", "coreCommit": core_commit,
+            "group": GROUP, "version": version,
+            "kotlin": re.search(r'const val kotlin = "([^"]+)"', (ROOT / "buildSrc/src/main/kotlin/Config.kt").read_text()).group(1),
+            "coreCommit": core_commit,
             "sourceCommit": source_commit, "modules": list(MODULES), "androidAbis": list(ABIS),
             "nativeJvmPlatforms": ["macos"], "nativeSha256": native_hashes,
             "workflowRun": os.environ.get("GITHUB_RUN_ID"),
