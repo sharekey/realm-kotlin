@@ -42,7 +42,9 @@ GitHub Packages, the Gradle Plugin Portal or upstream Realm infrastructure.
 
 **This command is a local validation set, not a complete cross-platform release.** The current host
 JVM JAR contains macOS JNI only; Linux/Windows native libraries and Kotlin Apple runtime publications
-have not been validated. KMP root metadata advertises those targets, so an Android-first release must
+have not been validated. The Android compiler plugin classpath also resolves `cinterop-jvm` and the JNI stub, so
+JVM artifacts cannot simply be omitted from an Android publication. KMP root metadata advertises
+all configured targets, so an Android-first release must
 explicitly settle its publication scope before upload. Do not upload this entire staging directory
 and call it a complete KMP release. The excluded Dokka task also means the documentation artifact is
 not release-ready. See the [migration evidence](kotlin-2.2.10-migration.md).
