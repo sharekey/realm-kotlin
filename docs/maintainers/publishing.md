@@ -203,7 +203,9 @@ A Maven registry is deferred. The comparison below is retained for a future publ
 and its passphrase as `REALM_SIGNING_PASSWORD` in the environment or private Gradle user properties.
 Use real newlines in the environment value. Do not pass secrets on a command line, put them in this
 repository, or paste them into task messages. With signing disabled, local validation needs no key.
-The old upstream key ID, Nexus profile, Nexus plugin and Sonatype credentials were removed.
+The old upstream key ID, Nexus profile, Nexus plugin and Sonatype credentials were removed. The
+obsolete root `mavenCentralUpload` task and its credential-forwarding helper were also removed;
+there is no Gradle upload task delegating to the retired `publishToSonatype` mechanism.
 `tools/publish_release.sh` fails immediately; the historical upstream snapshot/deploy tools are not
 supported for Sharekey distribution. The additional `sharekey.yml` workflow runs static analysis
 and plugin validation; it does not replace the inherited CI matrix or publish remotely. Those

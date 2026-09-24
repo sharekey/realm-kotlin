@@ -48,22 +48,11 @@ fun readAndCacheVersion(): String {
     return version
 }
 val currentVersion = readAndCacheVersion()
-// Default gates cover the migrated SDK. Legacy consumers keep explicit tasks until migrated.
+// Default gates cover the SDK. Consumer lint remains available through explicit tasks.
 val sdkBuilds = listOf("packages")
 val legacyConsumerBuilds = listOf("examples/kmm-sample", "benchmarks")
 fun taskName(subdir: String): String {
     return subdir.split("/", "-").map { it.capitalize() }.joinToString(separator = "")
-}
-
-fun copyProperties(action: GradleBuild) {
-    val propsToCopy = listOf("signBuild", "signPassword", "signSecretRingFileKotlin", "ossrhUsername", "ossrhPassword")
-    val project: Project = action.project
-    val buildProperties = action.startParameter.projectProperties
-    propsToCopy.forEach {
-        if (project.hasProperty(it)) {
-            buildProperties[it] = project.property(it) as String
-        }
-    }
 }
 
 tasks {
@@ -102,14 +91,6 @@ tasks {
             workingDir = file("${rootDir}/$subdir")
             commandLine = listOf("./gradlew", "detekt")
         }
-    }
-
-    register<GradleBuild>("mavenCentralUpload") {
-        description = "Push all Realm artifacts to Maven Central"
-        group = "Publishing"
-        buildFile = file("${rootDir}/packages/build.gradle.kts")
-        tasks = listOf("publishToSonatype")
-        copyProperties(this)
     }
 
     // TODO Verify we can actually use these debug symbols
