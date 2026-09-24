@@ -1,0 +1,125 @@
+# Building and testing the SDK
+
+These commands were checked against the source layout and task definitions at community `28182c37`.
+They were not executed during the documentation pass. The checkout initially had no initialized Core
+submodule, and the inherited toolchain has not yet been upgraded for Sharekey's mobile app.
+
+## Prerequisites and the correct Gradle root
+
+Use [Config.kt](../../buildSrc/src/main/kotlin/Config.kt) and the wrappers as the version authority.
+The current SDK build uses Gradle 7.6, Kotlin 2.0.20, AGP 7.3.1, compile/target SDK 33, Build Tools
+33.0.0 and NDK 23.2.8568313. Its JVM bytecode target is 1.8. The upstream contributing guide specifies
+JDK 11, SWIG 4.2.0+, CMake 3.18.1+ and ccache, with `JAVA_HOME`, `ANDROID_HOME` and `NDK_HOME` set.
+Apple targets additionally need the matching Xcode/platform tools. These are inherited build inputs,
+not a recommendation to downgrade the consuming mobile application.
+
+From the repository root, prepare the **pinned** Core revision:
+
+```sh
+git submodule status
+git submodule update --init --recursive
+```
+
+Do not use `--remote`: `.gitmodules` contains a historical branch hint, but the committed gitlink is
+the build input. `gradle-plugin` reads Core's `dependencies.yml` during configuration, and SWIG needs
+`src/realm.h`, so even task discovery may fail before initialization.
+
+Then enter the SDK build:
+
+```sh
+cd packages
+./gradlew projects
+./gradlew tasks --all
+```
+
+All following `./gradlew` commands assume `packages/` unless another directory is stated.
+The task path is `:test-base:jvmTest`, **not** `:packages:test-base:jvmTest`. The root build handles
+cross-project lint/release orchestration; it is not the Infomaniak root-build layout.
+
+## Targeted tests
+
+| Concern | Command from `packages/` | Notes |
+| --- | --- | --- |
+| Compiler generation and IR fixtures | `./gradlew :plugin-compiler:test` | Compilation and dependencies may still require native setup |
+| SDK JVM behavior and model validation | `./gradlew :test-base:jvmTest` | Requires the host's native Realm library |
+| One compiler regression group | `./gradlew :test-base:jvmTest --tests 'io.realm.kotlin.test.compiler.ModelDefinitionTests'` | Use the actual test class for the change |
+| Android device/emulator behavior | `./gradlew :test-base:connectedAndroidTest` | Requires a suitable connected device and Android native binaries |
+| macOS / iOS simulator tests | `./gradlew :test-base:macosTest :test-base:iosTest` | Host-specific aliases are configured on macOS |
+| SDK Kotlin style and static analysis | `./gradlew ktlintCheck detekt` | Root-level equivalents also traverse examples/benchmarks |
+
+The module tests are intentionally separate from the SDK modules. Source locations:
+
+- `test-base/src/commonTest`: shared behavior, migrations and notification tests;
+- `test-base/src/jvmTest`: compiler validation and JVM-specific cases;
+- `test-base/src/androidInstrumentedTest`: Android cases and a symlink to common tests;
+- `test-base/src/nativeDarwinTest`: Darwin-specific tests;
+- `cinterop/src/androidInstrumentedTest` and `nativeDarwinTest`: direct interop checks.
+
+Preserve the Android/common symlink. Shared test dependencies must currently be mirrored into
+`androidInstrumentedTest` as documented in [test-base's build script](../../packages/test-base/build.gradle.kts).
+Some old CONTRIBUTING paths such as `androidAndroidTest` no longer describe this checkout.
+
+## Source tests versus published-artifact tests
+
+By default, `includeSdkModules=true` and `includeTestModules=true`. `test-base` declares Maven
+coordinates and substitutes included SDK projects, allowing source development.
+
+To test the packaged SDK, first publish to the local **Test** repository, then exclude SDK projects:
+
+```sh
+./gradlew publishAllPublicationsToTestRepository
+./gradlew -PincludeSdkModules=false :test-base:jvmTest :test-base:connectedAndroidTest
+```
+
+This can build many targets; use a host with the required native prerequisites. The default repository
+is `packages/build/m2-buildrepo/`, configured by `testRepository` in
+[`packages/gradle.properties`](../../packages/gradle.properties). Use unique development versions and
+check resolved dependencies so Maven Central or a stale local publication cannot mask a bad build.
+
+There is an additional trap: Android **unit** test runtime configurations substitute the JVM
+artifacts and require those artifacts to have been published. Do not assume they see the latest
+source changes; the build script explicitly warns about this. Device instrumentation tests exercise
+a different native path.
+
+## Native build and publication controls
+
+| Property/task | Actual purpose |
+| --- | --- |
+| `realm.kotlin.buildRealmCore=false` | Suppresses selected native Core build work; does not provide missing headers/binaries |
+| `realm.kotlin.copyNativeJvmLibs` | Copies prebuilt JVM libraries into the package; inputs must be built and traceable |
+| `includeSdkModules` / `includeTestModules` | Controls SDK/test project inclusion |
+| `publishCIPackages` + `realm.kotlin.targets` | Selects publication tasks, not a universal switch disabling target configuration |
+| `realm.kotlin.mainHost` | Controls publication of multiplatform metadata in that workflow |
+| `generatePluginArtifactMarker` | Enables marker publication for Gradle's `plugins {}` resolution |
+
+Read the accepted target names in [packages/build.gradle.kts](../../packages/build.gradle.kts), rather
+than relying only on stale property comments. Core builds can be expensive.
+
+The default Gradle JVM-native builder supports macOS and Windows; its Linux branch throws. The
+inherited GitHub workflow builds the Linux JNI library through separate CMake steps. Consequently,
+Linux runtime support is not proof that the default local Linux Gradle source build works.
+
+## Consumer integration and CI
+
+`integration-tests/gradle/current` and the versioned Gradle fixtures are separate builds. They consume
+published packages and verify plugin/application wiring. After local publication, enter the chosen
+fixture and inspect/run its `assemble` task with its own wrapper and configured repository path.
+Examples and benchmarks are consumers too; they are not included by SDK `test-base` tasks.
+
+The inherited entry point is [`.github/workflows/pr.yml`](../../.github/workflows/pr.yml), with reusable
+static-analysis/integration workflows. It builds per-platform artifacts, assembles a local Maven
+repository and runs tests against those artifacts. Inspect its repository variables, credentials,
+runner versions, artifact paths and publish conditions before using it for Sharekey releases.
+Markdown-only pull requests are ignored by its PR trigger; documentation checks need a separate path.
+
+The commented `debugMinified` setup in `test-base` is not enabled by simply passing a property.
+A normal release build is not proof that R8/obfuscation works.
+
+## Recording a result
+
+Record SDK commit, Core SHA, toolchain versions, exact command, host/device and whether tests used
+source substitutions or published artifacts. Preserve failures and exclusions. For new releases,
+add mobile JS/Kotlin file interoperability, encryption, lifecycle and 16 KB validation described in
+[fork maintenance](fork-maintenance.md).
+
+For documentation-only changes, check links and run `git diff --check` from the repository root.

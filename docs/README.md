@@ -2,6 +2,12 @@
 Use the Realm SDK for Kotlin to develop Android or iOS apps
 using the Android platform or Kotlin Multiplatform (KMP).
 
+## Maintaining this fork
+
+For SDK implementation and Sharekey maintenance, start with the [maintainer guide](maintainers/README.md).
+It covers source structure, runtime/compiler internals, build roots, tests and the `community` branch
+strategy. The guides below describe how applications use the SDK.
+
 ## Get Started with the Kotlin SDK
 These docs provide minimal-explanation code examples of how to work with the Kotlin SDK.
 Use the SDK's open-source database - Realm - as an object store on the

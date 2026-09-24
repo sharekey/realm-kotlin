@@ -13,6 +13,13 @@ Realm is a mobile database that runs directly inside phones, tablets or wearable
 
 This repository holds the source code for the Kotlin SDK for Realm, which runs on Kotlin Multiplatform and Android.
 
+## Sharekey fork maintenance
+
+Use `community` as the baseline for the local-database SDK. This checkout still contains the original
+3.0.0 / Kotlin 2.0.20 implementation; the mobile application's Kotlin 2.2.10 adaptation is planned work.
+Start with the [maintainer guide](docs/maintainers/README.md) for the module map, runtime, compiler,
+build/test commands and fork strategy. Automated contributors should also read [AGENTS.md](AGENTS.md).
+
 ## Why Use Realm
 
 * **Intuitive to Developers:** Realm’s object-oriented data model is simple to learn, doesn’t need an ORM, and lets you write less code.
