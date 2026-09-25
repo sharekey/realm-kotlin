@@ -137,12 +137,15 @@ local Maven repository and runs tests against those artifacts. The migrated stat
 explicitly select Temurin JDK 17 and CMake 3.22.1; the SDK-scoped root gates have passed in the
 Sharekey workflows on GitHub. This does not establish that every inherited native job is configured.
 
-The inherited PR matrix now pins Temurin 17, CMake 3.22.1, Ninja 1.12.1, SWIG 4.3.1 and NDK
-27.0.12077973 in the repository. It does not require upstream `VERSION_*` repository variables.
+The inherited PR matrix now pins Temurin 17, Ninja 1.12.1, SWIG 4.3.1 and NDK 27.0.12077973
+in the repository. JNI/Android builds use CMake 3.22.1; Apple Kotlin/Native builds use CMake 3.31.6
+for the current Xcode generator. Apple builds select Xcode 16.4 on macOS 15, and Windows JNI selects
+Visual Studio 17 2022 on `windows-2022`. It does not require upstream `VERSION_*` repository variables.
 The SWIG installer is shared with the mobile release workflow and verifies the source archive's
 SHA-256. Intel macOS lanes use `macos-15-intel`; Android emulator consumers select API 35
-`google_apis` explicitly. Package cache keys include the workflows and SWIG installer so toolchain
-changes cannot reuse artifacts built with the previous configuration.
+`google_apis` explicitly. Android setup requests `platform-tools` explicitly because the action's
+legacy default also requests the removed `tools` package. Package cache keys include the workflows
+and SWIG installer so toolchain changes cannot reuse artifacts built with the previous configuration.
 
 The inherited matrix is not the Sharekey release pipeline. Its broader native consumer coverage
 must be verified by a successful run; selecting tool versions is not proof that those targets pass.

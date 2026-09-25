@@ -141,7 +141,7 @@ jobs:
           retention-days: 1
 
   build-jvm-windows-native-lib:
-    runs-on: windows-latest
+    runs-on: windows-2022
     needs: [check-cache, build-jni-swig-stub]
     if: |
       always() &&
@@ -201,6 +201,7 @@ jobs:
           cd realmWindowsBuild
           cmake `
           ..\..\src\jvm `
+          -G "Visual Studio 17 2022" `
           -DCMAKE_GENERATOR_PLATFORM=x64 `
           -DCMAKE_BUILD_TYPE=Release `
           -DREALM_NO_TESTS=1 `
@@ -216,7 +217,7 @@ jobs:
           retention-days: 1
 
   build-jvm-macos-native-lib:
-    runs-on: macos-14
+    runs-on: macos-15
     needs: [check-cache, build-jni-swig-stub]
     if: |
       always() &&
@@ -224,6 +225,10 @@ jobs:
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
       needs.check-cache.outputs.jni-macos-lib-cache-hit != 'true'
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      CXXFLAGS: -include cstdlib
 
     steps:
       - name: Checkout code
@@ -388,9 +393,10 @@ jobs:
   # This task is also responsible for creating the Gradle and Compiler Plugin as well as
   # all Kotlin Multiplatform Metadata
   build-jvm-packages:
-    runs-on: macos-14
+    runs-on: macos-15
     needs: [check-cache, build-jvm-linux-native-lib, build-jvm-windows-native-lib, build-jvm-macos-native-lib]
     env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
       NDK_VERSION: 27.0.12077973
     if: |
       always() &&
@@ -449,6 +455,9 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
 
       - name: Install NDK
         run: sdkmanager --install "ndk;${{ env.NDK_VERSION }}"
@@ -555,6 +564,9 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
 
       - name: Install NDK
         run: sdkmanager --install "ndk;${{ env.NDK_VERSION }}"
@@ -597,9 +609,13 @@ jobs:
 
   # TODO: ccache is not being used by this build for some reason
   build-macos-x64-packages:
-    runs-on: macos-14 # x64 builds fine on an arm64 node
+    runs-on: macos-15 # x64 builds fine on an arm64 node
     needs: check-cache
     if: always() && !cancelled() && needs.check-cache.outputs.packages-macos-x64-cache-hit != 'true'
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      CXXFLAGS: -include cstdlib
 
     steps:
       - name: Checkout code
@@ -621,7 +637,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: 3.22.1
+          cmake-version: 3.31.6
 
       - name: Setup ninja
         uses: clementetb/setup-ninja@master
@@ -669,10 +685,14 @@ jobs:
           retention-days: 1
 
   build-macos-arm64-packages:
-    runs-on: macos-14
+    runs-on: macos-15
     needs: check-cache
     # needs: static-analysis
     if: always() && !cancelled() && needs.check-cache.outputs.packages-macos-arm64-cache-hit != 'true'
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      CXXFLAGS: -include cstdlib
 
     steps:
       - name: Checkout code
@@ -694,7 +714,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: 3.22.1
+          cmake-version: 3.31.6
 
       - name: Setup ninja
         uses: clementetb/setup-ninja@master
@@ -737,10 +757,14 @@ jobs:
           retention-days: 1
 
   build-ios-x64-packages:
-    runs-on: macos-14 # x64 builds fine on an arm64 node
+    runs-on: macos-15 # x64 builds fine on an arm64 node
     needs: check-cache
     # needs: static-analysis
     if: always() && !cancelled() && needs.check-cache.outputs.packages-ios-x64-cache-hit != 'true'
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      CXXFLAGS: -include cstdlib
 
     steps:
       - name: Checkout code
@@ -762,7 +786,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: 3.22.1
+          cmake-version: 3.31.6
 
       - name: Setup ninja
         uses: clementetb/setup-ninja@master
@@ -806,10 +830,14 @@ jobs:
           retention-days: 1
 
   build-ios-arm64-packages:
-    runs-on: macos-14
+    runs-on: macos-15
     needs: check-cache
     # needs: static-analysis
     if: always() && !cancelled() && needs.check-cache.outputs.packages-ios-arm64-cache-hit != 'true'
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      CXXFLAGS: -include cstdlib
 
     steps:
       - name: Checkout code
@@ -831,7 +859,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: 3.22.1
+          cmake-version: 3.31.6
 
       - name: Setup ninja
         uses: clementetb/setup-ninja@master
@@ -970,7 +998,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15-intel, macos-14]
+        os: [macos-15-intel, macos-15]
         type: [base]
         include:
           - os: macos-15-intel
@@ -978,7 +1006,7 @@ jobs:
             os-id: macos
             package-prefix: macos-x64
             test-title: Unit Test Results - MacOS x64 Base
-          - os: macos-14
+          - os: macos-15
             type: base
             os-id: macos
             package-prefix: macos-arm64
@@ -993,6 +1021,9 @@ jobs:
       !cancelled() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
 
     steps:
       - name: Checkout code
@@ -1044,7 +1075,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15-intel, macos-14]
+        os: [macos-15-intel, macos-15]
         type: [base]
         include:
           - os: macos-15-intel
@@ -1052,7 +1083,7 @@ jobs:
             package-prefix: x64
             test-title: Unit Test Results - iOS x64 Base
             test-task: iosTest
-          - os: macos-14
+          - os: macos-15
             type: base
             package-prefix: arm64
             test-title: Unit Test Results - iOS arm64 Base
@@ -1067,6 +1098,9 @@ jobs:
       !cancelled() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
 
     steps:
       - name: Checkout code
@@ -1120,14 +1154,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15-intel, macos-14, ubuntu-latest, windows-latest]
+        os: [macos-15-intel, macos-15, ubuntu-latest, windows-latest]
         type: [base]
         include:
           - os: macos-15-intel
             os-id: mac
             type: base
             test-title: Unit Test Results - Base JVM MacOS x64
-          - os: macos-14
+          - os: macos-15
             os-id: mac
             type: base
             test-title: Unit Test Results - Base JVM MacOS arm64

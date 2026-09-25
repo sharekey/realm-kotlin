@@ -220,3 +220,12 @@ and invalid, unused compiler wrappers; CMake already configures ccache through c
 flags. The Core cache output spelling is corrected, and package caches include CI configuration.
 All existing platform build/test jobs remain enabled. A new GitHub run is required to establish the
 broader matrix's results; local actionlint and shell syntax checks alone do not validate those builds.
+
+The first repaired run passed JNI stub generation and Kotlin metadata/plugin publication, then
+exposed additional inherited setup problems: Android setup requested the removed SDK `tools`
+package, Windows selected NMake while passing an x64 generator platform, and CMake 3.22.1 could
+not identify Xcode's compilers for the macOS Core build. Follow-up configuration requests only
+`platform-tools`, selects Visual Studio 2022 explicitly, and uses CMake 3.31.6/Xcode 16.4 for Apple
+Kotlin/Native jobs. The CMake compiler-identification failure was reproduced locally; full Apple
+validation still depends on the matching GitHub runner, as local Xcode 27 has newer deployment
+requirements than the pinned Core toolchain.
