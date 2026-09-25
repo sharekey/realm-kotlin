@@ -218,8 +218,8 @@ replaces the obsolete Homebrew formula download with the checksum-verified SWIG 
 the release workflow, and replaces retired Intel runners. It also removes a stale Sync/BaaS output
 and invalid, unused compiler wrappers; CMake already configures ccache through compiler-launcher
 flags. The Core cache output spelling is corrected, and package caches include CI configuration.
-All existing platform build/test jobs remain enabled. A new GitHub run is required to establish the
-broader matrix's results; local actionlint and shell syntax checks alone do not validate those builds.
+All existing platform build/test jobs remain enabled. Local actionlint and shell syntax checks
+validate the configuration; the GitHub runs below establish the build and runtime results.
 
 The first repaired run passed JNI stub generation and Kotlin metadata/plugin publication, then
 exposed additional inherited setup problems: Android setup requested the removed SDK `tools`
@@ -245,4 +245,15 @@ iOS test binaries linked but could not start because the runner had no device na
 The inherited Intel Mac Android lanes also had emulator boot timeouts and a notification-test
 timeout. The follow-up selects and boots an installed iOS 18 simulator and runs Android tests on
 Linux/KVM, retaining the Gradle consumer JVM/native checks on macOS. No tests or assertions are
-removed. These changed runtime lanes still require a new successful CI run.
+removed. Runtime validation of these changes is recorded below.
+
+[Mobile release validation on `30a9bbd6`](https://github.com/sharekey/realm-kotlin/actions/runs/36121069523)
+passed the package build, compiler/JVM gates, API 25 clock tests, API 35 SDK suite and minified CRUD
+launch. The corresponding [PR matrix](https://github.com/sharekey/realm-kotlin/actions/runs/36121077966)
+passed all seven original build jobs, Android SDK instrumentation, the current Android Gradle
+consumer and Realm Java coexistence tests. The Gradle 8.3/8.5 Android consumers then exposed an
+AGP 8.1 UTP launcher failure: `GeneratedMessageV3` and `CodedInputStream` load through different
+class loaders, causing `IllegalAccessError` before any tests run. Only these two fixtures select
+AGP's legacy instrumentation runner; their connected tasks and assertions remain enabled.
+Both fixtures passed `CrudTests.crud` locally on a separate Android 16 ARM64 emulator with the
+committed override: one executed instrumentation test, no failures and no skipped tests per wrapper.

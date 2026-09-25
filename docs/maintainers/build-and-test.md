@@ -120,6 +120,11 @@ Examples and benchmarks are consumers too; they are not included by SDK `test-ba
 The Gradle 7.2/7.5 fixtures are retained as historical sources and removed from the CI matrix: Kotlin
 2.2.10 requires Gradle 7.6.3 or newer. The active Gradle consumers use Sharekey coordinates and JDK 17. The Gradle 8.3/8.5 fixtures
 retain AGP 8.1 and explicitly upgrade D8/R8 to 8.10.21 for Kotlin 2.2 bytecode.
+Their `gradle.properties` selects AGP 8.1's legacy instrumentation runner because its UTP launcher
+fails with a Protobuf class-loader `IllegalAccessError` on recent emulators before executing tests.
+The same `connectedDebugAndroidTest` tasks and assertions still run. This workaround is limited to
+these two compatibility fixtures; the current Gradle fixture, SDK and release tests use UTP.
+Remove the override when these fixtures move to an AGP version with a compatible UTP launcher.
 The Realm Java interoperability example uses the current wrapper, AGP namespace configuration and
 Realm Java 10.19.0 (the old 10.11.0 transformer does not support AGP 8). This example checks a separate
 SDK interoperability contract; the mobile app does not acquire a Realm Java dependency.
@@ -136,7 +141,8 @@ The inherited entry point is [`.github/workflows/pr.yml`](../../.github/workflow
 static-analysis/integration workflows. Its intended flow builds per-platform artifacts, assembles a
 local Maven repository and runs tests against those artifacts. The migrated static-analysis jobs
 explicitly select Temurin JDK 17 and CMake 3.22.1; the SDK-scoped root gates have passed in the
-Sharekey workflows on GitHub. This does not establish that every inherited native job is configured.
+Sharekey workflows on GitHub. Executed platform checks are recorded in
+[migration validation](kotlin-2.2.10-migration.md).
 
 The inherited PR matrix now pins Temurin 17, Ninja 1.12.1, SWIG 4.3.1 and NDK 27.0.12077973
 in the repository. JNI/Android builds use CMake 3.22.1; Apple Kotlin/Native builds use CMake 3.31.6
