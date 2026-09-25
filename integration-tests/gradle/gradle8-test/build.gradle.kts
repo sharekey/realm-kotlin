@@ -40,9 +40,11 @@ buildscript {
             mavenCentral()
         }
         dependencies {
+            // Kotlin 2.2 bytecode needs a newer D8/R8 than AGP 8.1 bundles.
+            classpath("com.android.tools:r8:8.10.21")
             classpath("com.android.tools.build:gradle:8.1.0")
             classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${rootProject.extra["kotlinVersion"]}")
-            classpath("io.realm.kotlin:gradle-plugin:${rootProject.extra["realmVersion"]}")
+            classpath("com.sharekey.realm.kotlin:gradle-plugin:${rootProject.extra["realmVersion"]}")
         }
 }
 group = "io.realm.test"

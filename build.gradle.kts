@@ -17,7 +17,7 @@
 
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
     }
 }
 
@@ -48,43 +48,34 @@ fun readAndCacheVersion(): String {
     return version
 }
 val currentVersion = readAndCacheVersion()
-val subprojects = listOf("packages", "examples/kmm-sample", "benchmarks")
+// Default gates cover the SDK. Consumer lint remains available through explicit tasks.
+val sdkBuilds = listOf("packages")
+val legacyConsumerBuilds = listOf("examples/kmm-sample", "benchmarks")
 fun taskName(subdir: String): String {
     return subdir.split("/", "-").map { it.capitalize() }.joinToString(separator = "")
-}
-
-fun copyProperties(action: GradleBuild) {
-    val propsToCopy = listOf("signBuild", "signPassword", "signSecretRingFileKotlin", "ossrhUsername", "ossrhPassword")
-    val project: Project = action.project
-    val buildProperties = action.startParameter.projectProperties
-    propsToCopy.forEach {
-        if (project.hasProperty(it)) {
-            buildProperties[it] = project.property(it) as String
-        }
-    }
 }
 
 tasks {
 
     register("ktlintCheck") {
-        description = "Runs ktlintCheck on all projects."
+        description = "Runs ktlintCheck on the SDK packages."
         group = "Verification"
-        dependsOn(subprojects.map { "ktlintCheck${taskName(it)}" })
+        dependsOn(sdkBuilds.map { "ktlintCheck${taskName(it)}" })
     }
 
     register("ktlintFormat") {
-        description = "Runs ktlintFormat on all projects."
+        description = "Runs ktlintFormat on the SDK packages."
         group = "Formatting"
-        dependsOn(subprojects.map { "ktlintFormat${taskName(it)}" })
+        dependsOn(sdkBuilds.map { "ktlintFormat${taskName(it)}" })
     }
 
     register("detekt") {
-        description = "Runs detekt on all projects."
+        description = "Runs detekt on the SDK packages."
         group = "Verification"
-        dependsOn(subprojects.map { "detekt${taskName(it)}" })
+        dependsOn(sdkBuilds.map { "detekt${taskName(it)}" })
     }
 
-    subprojects.forEach { subdir ->
+    (sdkBuilds + legacyConsumerBuilds).forEach { subdir ->
         register<Exec>("ktlintCheck${taskName(subdir)}") {
             description = "Run ktlintCheck on /$subdir project"
             workingDir = file("${rootDir}/$subdir")
@@ -102,18 +93,10 @@ tasks {
         }
     }
 
-    register<GradleBuild>("mavenCentralUpload") {
-        description = "Push all Realm artifacts to Maven Central"
-        group = "Publishing"
-        buildFile = file("${rootDir}/packages/build.gradle.kts")
-        tasks = listOf("publishToSonatype")
-        copyProperties(this)
-    }
-
     // TODO Verify we can actually use these debug symbols
     val archiveDebugSymbols by register("archiveDebugSymbols", Zip::class) {
-        archiveName = "realm-kotlin-jni-libs-unstripped-${currentVersion}.zip"
-        destinationDir = releaseMetaDataDir
+        archiveFileName.set("realm-kotlin-jni-libs-unstripped-${currentVersion}.zip")
+        destinationDirectory.set(releaseMetaDataDir)
         from("${rootDir}/packages/cinterop/build/intermediates/merged_native_libs/release/out/lib") {
             include("**/*.so")
         }

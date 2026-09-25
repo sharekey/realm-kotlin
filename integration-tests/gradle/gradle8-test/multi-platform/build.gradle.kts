@@ -17,10 +17,11 @@
 
 plugins {
     kotlin("multiplatform")
-    id("io.realm.kotlin")
+    id("com.sharekey.realm.kotlin")
 }
 
 kotlin {
+    jvmToolchain(17)
     jvm()
 
     val hostOs = System.getProperty("os.name")
@@ -42,7 +43,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("io.realm.kotlin:library-base:${rootProject.extra["realmVersion"]}")
+                implementation("com.sharekey.realm.kotlin:library-base:${rootProject.extra["realmVersion"]}")
             }
         }
         val commonTest by getting {

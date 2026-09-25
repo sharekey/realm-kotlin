@@ -1,24 +1,17 @@
-A POC of a Realm Kotlin Multiplatform library.  
+# Realm Kotlin runtime library
 
-# Building the project
+`library-base` contains the public local-database API and its runtime implementation. It depends on
+`cinterop` for the native boundary and on compiler-generated model/schema accessors in consuming apps.
 
-- First [build](./cpp_engine/README.md) the CPP binaries.
-- Publish the library locally
-```
-cd packages
-./gradlew publishToMavenLocal
-```
- 
-# Running Tests:
+- [Runtime architecture](../../docs/maintainers/runtime.md): configuration, object ownership,
+  transactions, snapshots and notifications.
+- [Repository map](../../docs/maintainers/repository-map.md): related compiler and native modules.
+- [Build and test](../../docs/maintainers/build-and-test.md): SDK commands run from `packages/`.
+- [Consumer documentation](../../docs/README.md): application-facing usage examples.
 
-## Running test on iOS
-- Start a `x86_64` simulator _(tested on iPhone 11 Pro Max)_
-- Run from <path/to/project/lib> `/gradlew iosTest`
+Start with `src/commonMain/kotlin/io/realm/kotlin/Realm.kt`, `RealmConfiguration.kt` and `internal/`.
+The `jvm` source set is shared by Android and desktop JVM. Darwin-specific actuals live under
+`nativeDarwin`, `nativeIos` and `nativeMacos`.
 
-## Running test on Android
-- Start an `x86_64` emulator 
-- Run from <path/to/project/lib> `/gradlew connectedAndroidTest`
-
-# Example project
-
-A sample project under [example](../example) directory demonstrate how to consume this library in a Multiplatform Kotlin Project targeting iOS and Android.
+Shared runtime tests live in the separate `test-base` module. Native libraries are built through
+`cinterop` and the pinned Core submodule; there is no `cpp_engine` directory in this checkout.

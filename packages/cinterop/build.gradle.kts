@@ -23,15 +23,10 @@ plugins {
     id("org.jetbrains.kotlin.multiplatform")
     id("com.android.library")
     id("realm-publisher")
+    id("org.jetbrains.kotlinx.atomicfu") version Versions.atomicfu
 }
 
-buildscript {
-    dependencies {
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:${Versions.atomicfu}")
-    }
-}
 
-apply(plugin = "kotlinx-atomicfu")
 // AtomicFu cannot transform JVM code. Throws
 // ClassCastException: org.objectweb.asm.tree.InsnList cannot be cast to java.lang.Iterable
 project.extensions.configure(kotlinx.atomicfu.plugin.gradle.AtomicFUPluginExtension::class) {
@@ -146,9 +141,15 @@ kotlin {
             // ... and def file does not support using environment variables
             // https://github.com/JetBrains/kotlin-native/issues/3631
             // so resolving paths through gradle
-            kotlinOptions.freeCompilerArgs += when (buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesIosSimulatorX86Debug
-                BuildType.RELEASE -> nativeLibraryIncludesIosSimulatorX86Release
+            compileTaskProvider.configure {
+                compilerOptions {
+                    freeCompilerArgs.addAll(
+                        when (buildType) {
+                            BuildType.DEBUG -> nativeLibraryIncludesIosSimulatorX86Debug
+                            BuildType.RELEASE -> nativeLibraryIncludesIosSimulatorX86Release
+                        }
+                    )
+                }
             }
         }
     }
@@ -159,9 +160,15 @@ kotlin {
                 packageName = "realm_wrapper"
                 includeDirs("$absoluteCorePath/src/")
             }
-            kotlinOptions.freeCompilerArgs += when (buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesIosSimulatorArm64Debug
-                BuildType.RELEASE -> nativeLibraryIncludesIosSimulatorArm64Release
+            compileTaskProvider.configure {
+                compilerOptions {
+                    freeCompilerArgs.addAll(
+                        when (buildType) {
+                            BuildType.DEBUG -> nativeLibraryIncludesIosSimulatorArm64Debug
+                            BuildType.RELEASE -> nativeLibraryIncludesIosSimulatorArm64Release
+                        }
+                    )
+                }
             }
         }
     }
@@ -179,9 +186,15 @@ kotlin {
             // ... and def file does not support using environment variables
             // https://github.com/JetBrains/kotlin-native/issues/3631
             // so resolving paths through gradle
-            kotlinOptions.freeCompilerArgs += when (buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesIosArm64Debug
-                BuildType.RELEASE -> nativeLibraryIncludesIosArm64Release
+            compileTaskProvider.configure {
+                compilerOptions {
+                    freeCompilerArgs.addAll(
+                        when (buildType) {
+                            BuildType.DEBUG -> nativeLibraryIncludesIosArm64Debug
+                            BuildType.RELEASE -> nativeLibraryIncludesIosArm64Release
+                        }
+                    )
+                }
             }
         }
     }
@@ -199,9 +212,15 @@ kotlin {
             // ... and def file does not support using environment variables
             // https://github.com/JetBrains/kotlin-native/issues/3631
             // so resolving paths through gradle
-            kotlinOptions.freeCompilerArgs += when(buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesMacosUniversalDebug
-                BuildType.RELEASE -> nativeLibraryIncludesMacosUniversalRelease
+            compileTaskProvider.configure {
+                compilerOptions {
+                    freeCompilerArgs.addAll(
+                        when (buildType) {
+                            BuildType.DEBUG -> nativeLibraryIncludesMacosUniversalDebug
+                            BuildType.RELEASE -> nativeLibraryIncludesMacosUniversalRelease
+                        }
+                    )
+                }
             }
         }
     }
@@ -212,9 +231,15 @@ kotlin {
                 packageName = "realm_wrapper"
                 includeDirs("$absoluteCorePath/src/")
             }
-            kotlinOptions.freeCompilerArgs += when(buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesMacosUniversalDebug
-                BuildType.RELEASE -> nativeLibraryIncludesMacosUniversalRelease
+            compileTaskProvider.configure {
+                compilerOptions {
+                    freeCompilerArgs.addAll(
+                        when (buildType) {
+                            BuildType.DEBUG -> nativeLibraryIncludesMacosUniversalDebug
+                            BuildType.RELEASE -> nativeLibraryIncludesMacosUniversalRelease
+                        }
+                    )
+                }
             }
         }
     }
@@ -575,17 +600,20 @@ fun Task.build_C_API_Macos_Universal(buildVariant: BuildType) {
             commandLine("mkdir", "-p", directory)
         }
         exec {
-            // See https://github.com/realm/realm-core/blob/master/tools/build-cocoa.sh#L47
-            // for source of these arguments.
+            // Configure macOS directly: Core's multi-platform Xcode toolchain replaces the
+            // universal architectures with ARCHS_STANDARD and defaults the SDK to iphoneos.
             workingDir(project.file(directory))
             commandLine(
                 "cmake",
                 *getSharedCMakeFlags(buildVariant),
-                "-DCMAKE_TOOLCHAIN_FILE=$absoluteCorePath/tools/cmake/xcode.toolchain.cmake",
                 "-DCMAKE_SYSTEM_NAME=Darwin",
                 "-DCPACK_SYSTEM_NAME=macosx",
                 "-DCPACK_PACKAGE_DIRECTORY=..",
                 "-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64",
+                "-DCMAKE_OSX_DEPLOYMENT_TARGET=10.13",
+                "-DCMAKE_CXX_STANDARD=20",
+                "-DCMAKE_XCODE_ATTRIBUTE_ENABLE_BITCODE=NO",
+                "-DREALM_ENABLE_ASSERTIONS=ON",
                 "-G",
                 "Xcode",
                 ".."
@@ -753,7 +781,7 @@ realmPublish {
         description =
             "Wrapper for interacting with Realm Kotlin native code. This artifact is not " +
             "supposed to be consumed directly, but through " +
-            "'io.realm.kotlin:gradle-plugin:${Realm.version}' instead."
+            "'${Realm.group}:gradle-plugin:${Realm.version}' instead."
     }
 }
 
@@ -776,7 +804,7 @@ val generateSdkVersionConstant: Task = tasks.create("generateSdkVersionConstant"
         )
     }
 }
-tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>> {
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
     dependsOn(generateSdkVersionConstant)
 }
 
@@ -806,7 +834,9 @@ abstract class CmakeVersionProvider : ValueSource<String, ValueSourceParameters.
     }
 }
 
-// enable execution optimizations for generateSdkVersionConstant
-afterEvaluate {
-    tasks.getByName("sourcesJar").dependsOn(generateSdkVersionConstant)
+// Every platform source archive includes the generated SDK version.
+tasks.matching {
+    it.name == "sourcesJar" || it.name.endsWith("SourcesJar")
+}.configureEach {
+    dependsOn(generateSdkVersionConstant)
 }

@@ -18,17 +18,21 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    id("io.realm.kotlin")
+    id("com.sharekey.realm.kotlin")
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 android {
-    compileSdk = 33
+    compileSdk = 35
 
     namespace = "io.realm.test.singleplatform"
 
     defaultConfig {
-        minSdk = 16
-        targetSdk = 33
+        minSdk = 21
+        targetSdk = 35
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -38,18 +42,18 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
 }
 
 dependencies {
     implementation("androidx.appcompat:appcompat:1.5.1")
     implementation("androidx.multidex:multidex:2.0.1")
-    implementation("io.realm.kotlin:library-base:${rootProject.extra["realmVersion"]}")
+    implementation("com.sharekey.realm.kotlin:library-base:${rootProject.extra["realmVersion"]}")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.3")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")

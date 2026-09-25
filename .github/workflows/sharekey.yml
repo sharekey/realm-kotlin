@@ -1,0 +1,19 @@
+name: Sharekey SDK checks
+
+on:
+  pull_request:
+    branches: [community]
+  push:
+    branches: [community]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sharekey-sdk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-analysis:
+    uses: ./.github/workflows/include-static-analysis.yml

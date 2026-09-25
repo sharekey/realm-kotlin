@@ -1,12 +1,12 @@
 plugins {
     java
+    kotlin("jvm")
     id("me.champeau.jmh") version Versions.jmhPlugin
 }
-apply(plugin = "kotlin")
 
 dependencies {
     jmh(project(":shared"))
-    jmh("io.realm.kotlin:library-base:${Realm.version}")
+    jmh("${Realm.group}:library-base:${Realm.version}")
     jmh("org.openjdk.jmh:jmh-core:${Versions.jmh}")
     jmh("org.openjdk.jmh:jmh-generator-annprocess:${Versions.jmh}")
 }
@@ -19,6 +19,6 @@ jmh {
     resultsFile.set(file("build/reports/benchmarks.json"))
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = "11"
+kotlin {
+    jvmToolchain(17)
 }

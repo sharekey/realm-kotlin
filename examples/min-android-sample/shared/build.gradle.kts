@@ -3,12 +3,13 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 plugins {
     kotlin("multiplatform")
     id("com.android.library")
-    id("io.realm.kotlin")
+    id("com.sharekey.realm.kotlin")
 }
 
 version = "1.0"
 
 kotlin {
+    jvmToolchain(17)
     jvm()
     androidTarget()
 
@@ -17,7 +18,7 @@ kotlin {
         val commonTest by getting
         val androidMain by getting {
             dependencies {
-                implementation("io.realm.kotlin:library-base:${rootProject.ext["realmVersion"]}")
+                implementation("${rootProject.extra["realmGroup"]}:library-base:${rootProject.ext["realmVersion"]}")
             }
         }
         val androidInstrumentedTest by getting
@@ -26,11 +27,14 @@ kotlin {
 }
 
 android {
-    compileSdk = 31
-    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
+    namespace = "io.realm.sample.minandroidsample"
+    compileSdk = 35
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
     defaultConfig {
-        minSdk = 16
-        targetSdk = 31
+        minSdk = 21
     }
 }
 

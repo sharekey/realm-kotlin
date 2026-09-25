@@ -20,13 +20,9 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.DependencySubstitutions
-import org.gradle.api.logging.Logger
-import org.gradle.api.logging.Logging
 
 @Suppress("unused")
 open class RealmPlugin : Plugin<Project> {
-
-    private val logger: Logger = Logging.getLogger("realm-plugin")
 
     override fun apply(project: Project) {
         project.pluginManager.apply(RealmCompilerSubplugin::class.java)
@@ -37,11 +33,11 @@ open class RealmPlugin : Plugin<Project> {
             if (conf.name.endsWith("UnitTestRuntimeClasspath")) {
                 conf.resolutionStrategy.dependencySubstitution { ds: DependencySubstitutions ->
                     with(ds) {
-                        substitute(module("io.realm.kotlin:library-base:$PLUGIN_VERSION")).using(
-                            module("io.realm.kotlin:library-base-jvm:$PLUGIN_VERSION")
+                        substitute(module("$PLUGIN_GROUP:library-base:$PLUGIN_VERSION")).using(
+                            module("$PLUGIN_GROUP:library-base-jvm:$PLUGIN_VERSION")
                         )
-                        substitute(module("io.realm.kotlin:cinterop:$PLUGIN_VERSION")).using(
-                            module("io.realm.kotlin:cinterop-jvm:$PLUGIN_VERSION")
+                        substitute(module("$PLUGIN_GROUP:cinterop:$PLUGIN_VERSION")).using(
+                            module("$PLUGIN_GROUP:cinterop-jvm:$PLUGIN_VERSION")
                         )
                     }
                 }

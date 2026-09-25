@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.yaml.snakeyaml.Yaml
-import java.io.FileInputStream
-
 plugins {
     kotlin("jvm")
     `java-gradle-plugin`
@@ -23,18 +20,8 @@ plugins {
     id("realm-publisher")
 }
 
-buildscript {
-    dependencies {
-        classpath("org.yaml:snakeyaml:1.33")
-    }
-}
-
 dependencies {
     compileOnly(kotlin("gradle-plugin"))
-    compileOnly("com.android.tools.build:gradle:${Versions.Android.buildTools}")
-    // JAX-B dependencies for JDK 9+ (this is not available in JVM env 'java.lang.NoClassDefFoundError: javax/xml/bind/DatatypeConverter'
-    // and it was removed in Java 11 https://stackoverflow.com/a/43574427
-    implementation("javax.xml.bind:jaxb-api:2.3.1")
 }
 
 val mavenPublicationName = "gradlePlugin"
@@ -45,8 +32,8 @@ fun createMarkerArtifact(): Boolean {
 }
 
 pluginBundle {
-    website = "https://github.com/realm/realm-kotlin"
-    vcsUrl = "https://github.com/realm/realm-kotlin"
+    website = Realm.projectUrl
+    vcsUrl = Realm.SCM.url
     tags = listOf("MongoDB", "Realm", "Database", "Kotlin", "Mobile", "Multiplatform", "Android", "KMM")
 
     mavenCoordinates {
@@ -60,7 +47,7 @@ gradlePlugin {
     plugins {
         create("RealmPlugin") {
             id = Realm.pluginPortalId
-            displayName = "Realm Kotlin Plugin"
+            displayName = "Sharekey Realm Kotlin Plugin"
             description = "Gradle plugin for the Realm Kotlin SDK, supporting Android and Multiplatform. " +
                 "Realm is a mobile database: Build better apps faster."
             implementationClass = "io.realm.kotlin.gradle.RealmPlugin"
@@ -100,19 +87,12 @@ sourceSets {
     }
 }
 
-// Task to generate gradle plugin runtime constants for SDK and core versions
+// Task to generate the Gradle plugin runtime version constant
 val versionConstants: Task = tasks.create("versionConstants") {
-    val coreDependenciesFile = layout.projectDirectory.file(
-        listOf("..", "external", "core", "dependencies.yml").joinToString(File.separator)
-    )
-    inputs.file(coreDependenciesFile)
     inputs.property("version", project.version)
+    inputs.property("group", project.group)
     val outputDir = file(versionDirectory)
     outputs.dir(outputDir)
-
-    val yaml = Yaml()
-    val coreDependencies: Map<String, String> = yaml.load(FileInputStream(coreDependenciesFile.asFile))
-    val coreVersion = coreDependencies["VERSION"]
 
     doLast {
         val versionFile = file("$outputDir/io/realm/kotlin/gradle/version.kt")
@@ -122,7 +102,7 @@ val versionConstants: Task = tasks.create("versionConstants") {
             // Generated file. Do not edit!
             package io.realm.kotlin.gradle
             internal const val PLUGIN_VERSION = "${project.version}"
-            internal const val CORE_VERSION = "${coreVersion}"
+            internal const val PLUGIN_GROUP = "${project.group}"
             """.trimIndent()
         )
     }

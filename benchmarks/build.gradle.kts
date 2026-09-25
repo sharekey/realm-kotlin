@@ -15,7 +15,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("io.realm.kotlin:gradle-plugin:${Realm.version}")
+        classpath("${Realm.group}:gradle-plugin:${Realm.version}")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.kotlin}")
         classpath("com.android.tools.build:gradle:${Versions.Android.buildTools}")
         classpath("androidx.benchmark:benchmark-gradle-plugin:${Versions.androidxBenchmarkPlugin}")
@@ -32,7 +32,7 @@ allprojects {
     }
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.jvmTarget = Versions.kotlinJvmTarget
+        compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(Versions.kotlinJvmTarget))
     }
 }
 

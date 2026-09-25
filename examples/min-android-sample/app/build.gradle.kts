@@ -3,28 +3,36 @@ plugins {
     kotlin("android")
 }
 
+kotlin {
+    jvmToolchain(17)
+}
+
 android {
-    compileSdk = 31
+    namespace = "io.realm.example.minandroidsample.android"
+    compileSdk = 35
     defaultConfig {
         applicationId = "io.realm.example.minandroidsample.android"
-        minSdk = 16
-        targetSdk = 31
+        minSdk = 21
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            // This sample is an installable R8 smoke test, not a distribution APK.
+            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
 dependencies {
     implementation(project(":shared"))
-    implementation("com.android.support:appcompat-v7:28.0.0")
-    implementation("com.android.support.constraint:constraint-layout:2.0.4")
+    implementation("androidx.appcompat:appcompat:1.5.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 }

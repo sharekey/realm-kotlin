@@ -11,7 +11,7 @@ jobs:
 
   # TODO: The Monkey seems to crash the app all the time, but with failures that are not coming from the app. Figure out why.
   # android-sample-app:
-  #   runs-on: macos-12
+  #   runs-on: macos-15-intel
   #   steps:
   #     - name: Checkout code
   #       uses: actions/checkout@v4
@@ -57,11 +57,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -82,16 +82,16 @@ jobs:
           ./gradlew assembleDebug jvmJar
 
   realm-java-compatibiliy:
-    runs-on: macos-12
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -130,24 +130,25 @@ jobs:
       #     channel: canary
       #     script: echo "Generated AVD snapshot for caching."
 
-      # TODO Can we read api level from Config.kt
+      - name: Prepare Android emulator with KVM
+        if: runner.os == 'Linux'
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
       - name: Run Gradle Plugin Test project
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
         with:
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          force-avd-creation: false
-          api-level: ${{ vars.VERSION_ANDROID_EMULATOR_API_LEVEL }}
-          target: default
+          api-level: 35
+          target: google_apis
           # target: aosp_atd
           arch: x86_64        
           # profile: Nexus 6
-          disk-size: 4096M
-          ram-size: 2048M
-          heap-size: 1024M
-          channel: canary
           script: cd examples/realm-java-compatibility && ./gradlew connectedAndroidTest -PincludeSdkModules=false --info
 
       # TODO: This fails with `Error: Cannot read property 'trim' of undefined`. Possible a bug in the action.
@@ -171,11 +172,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -190,34 +191,31 @@ jobs:
 
       - name: Build benchmarks
         working-directory: benchmarks
-        run: ./gradlew assemble
+        run: ./gradlew assemble :androidApp:assembleReleaseAndroidTest :jvmApp:jmhJar
 
   gradle-plugin-integration:
     strategy:
+      fail-fast: false
       matrix:
-        type: [current, gradle72, gradle75]
+        os: [macos-15-intel, ubuntu-24.04]
+        # Kotlin 2.2.10 requires Gradle 7.6.3+. Older fixtures remain historical sources.
+        type: [current]
         include:
           - type: current
             path: integration-tests/gradle/current
-            arguments: integrationTest
-          - type: gradle72
-            path: integration-tests/gradle/gradle72-test
-            arguments: integrationTest
-          - type: gradle75
-            path: integration-tests/gradle/gradle75-test
-            arguments: integrationTest
-    runs-on: macos-12
+            arguments: :single-platform:connectedDebugAndroidTest
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -256,38 +254,49 @@ jobs:
       #     channel: canary
       #     script: echo "Generated AVD snapshot for caching."
 
-      # TODO Can we read api level from Config.kt
-      - name: Run Gradle Plugin Test project
+      - name: Test JVM and native Gradle consumers
+        if: runner.os == 'macOS'
+        working-directory: ${{ matrix.path }}
+        env:
+          DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+        run: ./gradlew integrationTest -x :single-platform:connectedDebugAndroidTest --info
+
+      - name: Prepare Android emulator with KVM
+        if: runner.os == 'Linux'
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Android Gradle consumer tests
+        if: runner.os == 'Linux'
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
         with:
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          force-avd-creation: false
-          api-level: ${{ vars.VERSION_ANDROID_EMULATOR_API_LEVEL }}
-          target: default
+          api-level: 35
+          target: google_apis
           # target: aosp_atd
           arch: x86_64        
           # profile: Nexus 6
-          disk-size: 4096M
-          ram-size: 2048M
-          heap-size: 1024M
-          channel: canary
           script: cd ${{ matrix.path }} && ./gradlew ${{ matrix.arguments }} --info    
 
   gradle-plugin-integration-java-17:
     strategy:
+      fail-fast: false
       matrix:
+        os: [macos-15-intel, ubuntu-24.04]
         type: [gradle8, gradle85]
         include:
           - type: gradle8
             path: integration-tests/gradle/gradle8-test
-            arguments: integrationTest
+            arguments: :single-platform:connectedDebugAndroidTest
           - type: gradle85
             path: integration-tests/gradle/gradle85-test
-            arguments: integrationTest
-    runs-on: macos-12
+            arguments: :single-platform:connectedDebugAndroidTest
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -297,7 +306,7 @@ jobs:
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
+          distribution: temurin
           java-version: 17
 
       - name: Setup Gradle and task/dependency caching
@@ -337,22 +346,31 @@ jobs:
       #     channel: canary
       #     script: echo "Generated AVD snapshot for caching."
 
-      # TODO Can we read api level from Config.kt
-      - name: Run Gradle Plugin Test project
+      - name: Test JVM and native Gradle consumers
+        if: runner.os == 'macOS'
+        working-directory: ${{ matrix.path }}
+        env:
+          DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+        run: ./gradlew integrationTest -x :single-platform:connectedDebugAndroidTest --info
+
+      - name: Prepare Android emulator with KVM
+        if: runner.os == 'Linux'
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Android Gradle consumer tests
+        if: runner.os == 'Linux'
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
         with:
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          force-avd-creation: false
-          api-level: ${{ vars.VERSION_ANDROID_EMULATOR_API_LEVEL }}
-          target: default
+          api-level: 35
+          target: google_apis
           # target: aosp_atd
           arch: x86_64        
           # profile: Nexus 6
-          disk-size: 4096M
-          ram-size: 2048M
-          heap-size: 1024M
-          channel: canary
           script: cd ${{ matrix.path }} && ./gradlew ${{ matrix.arguments }} --info          

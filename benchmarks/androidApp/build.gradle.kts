@@ -14,13 +14,8 @@ android {
         targetCompatibility = Versions.targetCompatibilityVersion
     }
 
-    kotlinOptions {
-        jvmTarget = Versions.kotlinJvmTarget
-    }
-
     defaultConfig {
-        // Use minSdk = 32 because minSdk = 33 is throwing build time warnings saying it isn't supported,
-        // also we want to test performance against the latest release rather than the oldest.
+        // Keep performance comparisons on API 32+; SDK compatibility tests cover older Android.
         minSdk = 32
         targetSdk = Versions.Android.targetSdk
         testInstrumentationRunner = "androidx.benchmark.junit4.AndroidBenchmarkRunner"
@@ -47,7 +42,7 @@ android {
 }
 
 dependencies {
-    androidTestImplementation("io.realm.kotlin:library-base:${Realm.version}")
+    androidTestImplementation("${Realm.group}:library-base:${Realm.version}")
     androidTestImplementation("androidx.test:runner:${Versions.androidxTest}")
     androidTestImplementation("androidx.test.ext:junit:${Versions.androidxJunit}")
     androidTestImplementation("junit:junit:${Versions.junit}")

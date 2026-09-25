@@ -377,8 +377,10 @@ class GenerationExtensionTest {
             messageOutputStream = System.out
             componentRegistrars = plugins
             inheritClassPath = true
+            jvmTarget = "17"
             kotlincArguments = listOf(
                 "-Xjvm-default=all-compatibility",
+                "-Xverify-ir=error",
                 "-Xdump-directory=${inputs.outputDir()}",
                 "-Xphases-to-dump-after=JvmValidateIrBeforeLowering"
             )

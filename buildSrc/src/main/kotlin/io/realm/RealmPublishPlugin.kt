@@ -18,8 +18,6 @@
 package io.realm.kotlin
 
 import Realm
-import io.github.gradlenexus.publishplugin.NexusPublishExtension
-import io.github.gradlenexus.publishplugin.NexusPublishPlugin
 import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -33,7 +31,6 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.plugins.signing.SigningExtension
 import org.gradle.plugins.signing.SigningPlugin
 import java.io.File
-import java.time.Duration
 
 // Custom options for POM configurations that might differ between Realm modules
 open class PomOptions {
@@ -57,18 +54,14 @@ fun getPropertyValue(project: Project, propertyName: String, defaultValue: Strin
     return systemValue ?: defaultValue
 }
 
-fun hasProperty(project: Project, propertyName: String): Boolean {
-    val systemProp: String? = System.getenv(propertyName)
-    val projectProp: Boolean = project.hasProperty(propertyName)
-    return projectProp || (systemProp != null && systemProp.isNotEmpty())
-}
-
-// Plugin responsible for handling publishing to mavenLocal and Maven Central.
+// Stage Maven publications locally. Uploading a release is a separate, explicit operation.
 class RealmPublishPlugin : Plugin<Project> {
     override fun apply(project: Project): Unit = project.run {
-        // Configure constants required by the publishing process
-        val signBuild: Boolean = hasProperty(project,"signBuild")
-        configureSignedBuild(signBuild, this)
+        // The root is an orchestrator, not a Maven artifact.
+        if (project != project.rootProject) {
+            configureSubProject(project, getPropertyValue(project, "signBuild").toBoolean())
+            configureTestRepository(project)
+        }
     }
 
     private fun configureTestRepository(project: Project) {
@@ -86,30 +79,7 @@ class RealmPublishPlugin : Plugin<Project> {
         }
     }
 
-    private fun configureSignedBuild(signBuild: Boolean, project: Project) {
-        // The nexus publisher plugin can only be applied to top-level projects.
-        // See https://github.com/gradle-nexus/publish-plugin/issues/81
-        // Also, we should not apply the MavenPublish plugin to the root project as it will result in an
-        // empty `realm-kotlin` artifact being deployed to Maven Central.
-        val isRootProject: Boolean = (project == project.rootProject)
-        if (isRootProject) {
-            configureRootProject(project)
-        } else {
-            configureSubProject(project, signBuild)
-            configureTestRepository(project)
-        }
-    }
-
     private fun configureSubProject(project: Project, signBuild: Boolean) {
-        // ID for the Realm Kotlin PGP key file.
-        val keyId = "1F48C9B0"
-        // Apparently Gradle treats properties define through a gradle.properties file differently
-        // than those defined through the commandline using `-P`. This is a problem with new
-        // line characters as found in an ascii-armoured PGP file. To ensure we can work around this,
-        // all newlines have been replaced with `#` and thus needs to be reverted here.
-        val ringFile: String = getPropertyValue(project,"signSecretRingFileKotlin").replace('#', '\n')
-        val password: String = getPropertyValue(project, "signPasswordKotlin")
-
         with(project) {
             plugins.apply(SigningPlugin::class.java)
             plugins.apply(MavenPublishPlugin::class.java)
@@ -124,36 +94,16 @@ class RealmPublishPlugin : Plugin<Project> {
                 }
             }
 
-            // Configure signing of artifacts
-            extensions.getByType<SigningExtension>().apply {
-                isRequired = signBuild
-                useInMemoryPgpKeys(keyId, ringFile, password)
-                sign(project.extensions.getByType<PublishingExtension>().publications)
-            }
-        }
-    }
-
-    private fun configureRootProject(project: Project) {
-        val sonatypeStagingProfileId = "78c19333e4450f"
-
-        with(project) {
-            project.plugins.apply(NexusPublishPlugin::class.java)
-
-            // Configure upload to Maven Central.
-            // The nexus publisher plugin can only be applied to top-level projects.
-            // See https://github.com/gradle-nexus/publish-plugin/issues/81
-            extensions.getByType<NexusPublishExtension>().apply {
-                this.packageGroup.set("io.realm.kotlin")
-                this.repositories {
-                    sonatype {
-                        this.stagingProfileId.set(sonatypeStagingProfileId)
-                        this.username.set(getPropertyValue(project,"ossrhUsername"))
-                        this.password.set(getPropertyValue(project,"ossrhPassword"))
-                    }
+            if (signBuild) {
+                val signingKey = getPropertyValue(project, "REALM_SIGNING_KEY")
+                val signingPassword = getPropertyValue(project, "REALM_SIGNING_PASSWORD")
+                require(signingKey.isNotBlank()) {
+                    "Signed publication requires REALM_SIGNING_KEY in the environment or Gradle user properties."
                 }
-                this.transitionCheckOptions {
-                    maxRetries.set(720) // Retry for 2 hours. Sometimes Maven Central is really slow!
-                    delayBetween.set(Duration.ofSeconds(10))
+                extensions.getByType<SigningExtension>().apply {
+                    isRequired = true
+                    useInMemoryPgpKeys(signingKey, signingPassword)
+                    sign(project.extensions.getByType<PublishingExtension>().publications)
                 }
             }
         }
@@ -185,7 +135,8 @@ class RealmPublishPlugin : Plugin<Project> {
                         developers {
                             developer {
                                 name.set(Realm.Developer.name)
-                                email.set(Realm.Developer.email)
+                                id.set("sharekey")
+                                url.set(Realm.projectUrl)
                                 organization.set(Realm.Developer.organization)
                                 organizationUrl.set(Realm.Developer.organizationUrl)
                             }

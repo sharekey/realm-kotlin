@@ -2,12 +2,13 @@ plugins {
     kotlin("multiplatform")
     // kotlin("native.cocoapods")
     id("com.android.library")
-    id("io.realm.kotlin")
+    id("com.sharekey.realm.kotlin")
 }
 
 version = "1.0"
 
 kotlin {
+    jvmToolchain(17)
     androidTarget()
     jvm()
 // Disable iOS until needed
@@ -28,7 +29,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("io.realm.kotlin:library-base:${Realm.version}")
+                implementation("${Realm.group}:library-base:${Realm.version}")
             }
         }
         val androidMain by getting
@@ -57,6 +58,10 @@ kotlin {
 android {
     namespace = "io.realm.kotlin.benchmarks"
     compileSdk = Versions.Android.compileSdkVersion
+    compileOptions {
+        sourceCompatibility = Versions.sourceCompatibilityVersion
+        targetCompatibility = Versions.targetCompatibilityVersion
+    }
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     defaultConfig {
         minSdk = Versions.Android.minSdk
