@@ -140,7 +140,10 @@ Sharekey workflows on GitHub. This does not establish that every inherited nativ
 The inherited PR matrix now pins Temurin 17, Ninja 1.12.1, SWIG 4.3.1 and NDK 27.0.12077973
 in the repository. JNI/Android builds use CMake 3.22.1; Apple Kotlin/Native builds use CMake 3.31.6
 for the current Xcode generator. Apple builds select Xcode 16.4 on macOS 15, and Windows JNI selects
-Visual Studio 17 2022 on `windows-2022`. It does not require upstream `VERSION_*` repository variables.
+Visual Studio 17 2022 on `windows-2022`. The macOS Core task configures the desktop Xcode
+generator directly: Core's multi-platform Apple toolchain overrides the universal architectures
+and defaults to the iPhone SDK. The task preserves C++20, release assertions and the original macOS
+10.13 deployment setting (arm64 uses its platform minimum). It does not require upstream `VERSION_*` repository variables.
 The SWIG installer is shared with the mobile release workflow and verifies the source archive's
 SHA-256. Intel macOS lanes use `macos-15-intel`; Android emulator consumers select API 35
 `google_apis` explicitly. Android setup requests `platform-tools` explicitly because the action's

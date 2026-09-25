@@ -600,17 +600,20 @@ fun Task.build_C_API_Macos_Universal(buildVariant: BuildType) {
             commandLine("mkdir", "-p", directory)
         }
         exec {
-            // See https://github.com/realm/realm-core/blob/master/tools/build-cocoa.sh#L47
-            // for source of these arguments.
+            // Configure macOS directly: Core's multi-platform Xcode toolchain replaces the
+            // universal architectures with ARCHS_STANDARD and defaults the SDK to iphoneos.
             workingDir(project.file(directory))
             commandLine(
                 "cmake",
                 *getSharedCMakeFlags(buildVariant),
-                "-DCMAKE_TOOLCHAIN_FILE=$absoluteCorePath/tools/cmake/xcode.toolchain.cmake",
                 "-DCMAKE_SYSTEM_NAME=Darwin",
                 "-DCPACK_SYSTEM_NAME=macosx",
                 "-DCPACK_PACKAGE_DIRECTORY=..",
                 "-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64",
+                "-DCMAKE_OSX_DEPLOYMENT_TARGET=10.13",
+                "-DCMAKE_CXX_STANDARD=20",
+                "-DCMAKE_XCODE_ATTRIBUTE_ENABLE_BITCODE=NO",
+                "-DREALM_ENABLE_ASSERTIONS=ON",
                 "-G",
                 "Xcode",
                 ".."

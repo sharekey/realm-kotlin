@@ -229,3 +229,11 @@ not identify Xcode's compilers for the macOS Core build. Follow-up configuration
 Kotlin/Native jobs. The CMake compiler-identification failure was reproduced locally; full Apple
 validation still depends on the matching GitHub runner, as local Xcode 27 has newer deployment
 requirements than the pinned Core toolchain.
+
+The follow-up Apple run identified a second macOS configuration issue: Core's multi-platform
+Xcode toolchain sets `ARCHS_STANDARD`, so CMake 3.31.6 detects only arm64 when the caller requests
+`x86_64;arm64`. The macOS-only task now configures Xcode directly while retaining C++20, release
+assertions, disabled bitcode and the previous 10.13 deployment setting. Local Core configuration
+and generation passed with both architectures in the generated project. This local configuration
+check used deployment target 12.0 because Xcode 27 rejects older targets; CI retains the original
+target on Xcode 16.4. It does not count as a completed native build or runtime test.
