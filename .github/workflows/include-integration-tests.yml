@@ -139,15 +139,14 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           force-avd-creation: false
-          api-level: ${{ vars.VERSION_ANDROID_EMULATOR_API_LEVEL }}
-          target: default
+          api-level: 35
+          target: google_apis
           # target: aosp_atd
           arch: x86_64        
           # profile: Nexus 6
           disk-size: 4096M
           ram-size: 2048M
           heap-size: 1024M
-          channel: canary
           script: cd examples/realm-java-compatibility && ./gradlew connectedAndroidTest -PincludeSdkModules=false --info
 
       # TODO: This fails with `Error: Cannot read property 'trim' of undefined`. Possible a bug in the action.
@@ -260,15 +259,14 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           force-avd-creation: false
-          api-level: ${{ vars.VERSION_ANDROID_EMULATOR_API_LEVEL }}
-          target: default
+          api-level: 35
+          target: google_apis
           # target: aosp_atd
           arch: x86_64        
           # profile: Nexus 6
           disk-size: 4096M
           ram-size: 2048M
           heap-size: 1024M
-          channel: canary
           script: cd ${{ matrix.path }} && ./gradlew ${{ matrix.arguments }} --info    
 
   gradle-plugin-integration-java-17:
@@ -341,13 +339,12 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           force-avd-creation: false
-          api-level: ${{ vars.VERSION_ANDROID_EMULATOR_API_LEVEL }}
-          target: default
+          api-level: 35
+          target: google_apis
           # target: aosp_atd
           arch: x86_64        
           # profile: Nexus 6
           disk-size: 4096M
           ram-size: 2048M
           heap-size: 1024M
-          channel: canary
           script: cd ${{ matrix.path }} && ./gradlew ${{ matrix.arguments }} --info          

@@ -54,16 +54,7 @@ jobs:
           set -euo pipefail
           brew install ccache
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0' 'ndk;27.0.12077973' 'cmake;3.22.1'
-          curl --fail --location --retry 3 \
-            https://downloads.sourceforge.net/project/swig/swig/swig-4.3.1/swig-4.3.1.tar.gz \
-            -o "$RUNNER_TEMP/swig.tar.gz"
-          echo "44fc829f70f1e17d635a2b4d69acab38896699ecc24aa023e516e0eabbec61b8  $RUNNER_TEMP/swig.tar.gz" | shasum -a 256 -c -
-          tar -xzf "$RUNNER_TEMP/swig.tar.gz" -C "$RUNNER_TEMP"
-          cd "$RUNNER_TEMP/swig-4.3.1"
-          ./configure --prefix="$RUNNER_TEMP/realm-tools" --without-pcre --without-alllang
-          make -j3
-          make install
-          echo "$RUNNER_TEMP/realm-tools/bin" >> "$GITHUB_PATH"
+          bash tools/install-ci-swig.sh
       - name: Test packaging failure recovery
         run: python3 -B -m unittest discover -s tools/tests -v
       - name: Build SDK, test JVM and package Maven repository

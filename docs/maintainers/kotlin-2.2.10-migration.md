@@ -208,3 +208,15 @@ SWIG 4.3.1 and ccache 4.10.2 were built locally from official source archives be
 Homebrew did not recognize macOS 27. CMake 3.22.1 and NDK 27.0.12077973 came from the Android SDK.
 The SDK 27 failure is not evidence of Kotlin compiler incompatibility; this does not claim general
 support for Xcode 27 or verify iOS execution.
+
+### PR Build configuration repair (2026-09-25)
+
+All seven initial failures in [PR Build run 36068005741](https://github.com/sharekey/realm-kotlin/actions/runs/36068005741)
+occurred before compilation: `setup-java` received no `distribution` because the fork has no upstream
+repository variables. The workflow now selects Temurin 17 and explicit native/Android tool versions,
+replaces the obsolete Homebrew formula download with the checksum-verified SWIG installer used by
+the release workflow, and replaces retired Intel runners. It also removes a stale Sync/BaaS output
+and invalid, unused compiler wrappers; CMake already configures ccache through compiler-launcher
+flags. The Core cache output spelling is corrected, and package caches include CI configuration.
+All existing platform build/test jobs remain enabled. A new GitHub run is required to establish the
+broader matrix's results; local actionlint and shell syntax checks alone do not validate those builds.

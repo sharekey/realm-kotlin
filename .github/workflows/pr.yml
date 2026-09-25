@@ -14,13 +14,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  CMAKE_C_COMPILER: /usr/local/bin/ccache-clang
-  CMAKE_CXX_COMPILER: /usr/local/bin/ccache-clang++
-  # Workflow environment variables are not available in Job if statements: https://github.com/actions/runner/issues/1661
-  # For now move this check to the `deploy-snapshot` job and figure out if there is a better way to do this.
-  # IS_RELEASE_BRANCH: "${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/releases' }}"
-
 jobs:
   static-analysis:
     uses: ./.github/workflows/include-static-analysis.yml
@@ -44,11 +37,11 @@ jobs:
         run: |-
           echo "::add-matcher::.github/problem-matchers/kotlin.json"
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -64,24 +57,10 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: ${{ vars.VERSION_CMAKE }}
+          cmake-version: 3.22.1
 
-      # Manually install SWIG 4.1.1 as only 4.0.2 is pre-installed
-      # 4.1.1 is not available in apt-get, so use brew instead
-      # We need to use the formulae directly from GitHub to pin the version as Homebrew does not have
-      # all versions available.
-      # https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md#ubuntu-22041-lts
-      # It seems to be required to manually add brew dirs to the PATH. This does not happen automatically.
-      - name: Install SWIG
-        run: |
-          test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)"
-          test -d /home/linuxbrew/.linuxbrew && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          test -r ~/.bash_profile && echo "eval \"\$($(brew --prefix)/bin/brew shellenv)\"" >> ~/.bash_profile
-          echo "eval \"\$($(brew --prefix)/bin/brew shellenv)\"" >> ~/.profile
-          echo "/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
-          echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
-          cd ~
-          curl -L ${{ vars.VERSION_SWIG}} > swig.rb && HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=true brew install swig.rb
+      - name: Install SWIG 4.3.1
+        run: bash tools/install-ci-swig.sh
 
       - name: Build JNI Stub
         working-directory: ./packages
@@ -120,16 +99,16 @@ jobs:
           path: ./packages/cinterop/build/realmLinuxBuild
           key: jni-linux-lib-${{ needs.check-cache.outputs.packages-sha }}
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: ${{ vars.VERSION_CMAKE }}
+          cmake-version: 3.22.1
 
       - name: Restore JNI Swig Stubs
         uses: actions/download-artifact@v4
@@ -193,10 +172,16 @@ jobs:
           key: jni-windows-lib-${{ needs.check-cache.outputs.packages-sha }}
           enableCrossOsArchive: true
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: ${{ vars.VERSION_CMAKE }}
+          cmake-version: 3.22.1
 
       - name: Restore JNI Swig Stubs
         uses: actions/download-artifact@v4
@@ -246,11 +231,11 @@ jobs:
         with:
           submodules: "recursive"
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -260,12 +245,12 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: ${{ vars.VERSION_CMAKE }}
+          cmake-version: 3.22.1
 
       - name: Setup ninja
         uses: clementetb/setup-ninja@master
         with:
-          version: ${{ vars.VERSION_NINJA  }}
+          version: 1.12.1
 
       - name: Install ccache
         uses: hendrikmuhs/ccache-action@v1.2.13
@@ -276,13 +261,10 @@ jobs:
       - name: Prepend ccache executables to the PATH
         run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
 
-      # See https://github.com/hendrikmuhs/ccache-action/issues/94
       - name: Configure ccache
         run: |
           ccache --set-config="compiler_check=content"
           ccache --show-config
-          echo '#!/bin/bash\nccache clang "$@"%"' > /usr/local/bin/ccache-clang
-          echo '#!/bin/bash\nccache clang++ "$@"%"' > /usr/local/bin/ccache-clang++
 
       - name: Debug environment
         run: |
@@ -324,7 +306,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [check-cache]
     env:
-      NDK_VERSION: 23.2.8568313
+      NDK_VERSION: 27.0.12077973
     if: |
       always() &&
       !cancelled() &&
@@ -342,11 +324,11 @@ jobs:
         run: |-
           echo "::add-matcher::.github/problem-matchers/kotlin.json"
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -356,12 +338,12 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: ${{ vars.VERSION_CMAKE }}
+          cmake-version: 3.22.1
 
       - name: Setup ninja
         uses: clementetb/setup-ninja@master
         with:
-          version: ${{ vars.VERSION_NINJA  }}
+          version: 1.12.1
 
       - name: Install ccache
         uses: hendrikmuhs/ccache-action@v1.2.13
@@ -372,19 +354,18 @@ jobs:
       - name: Prepend ccache executables to the PATH
         run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
 
-      # See https://github.com/hendrikmuhs/ccache-action/issues/94
       - name: Configure ccache
         run: |
           ccache --set-config="compiler_check=content"
           ccache --show-config
-          echo '#!/bin/bash\nccache clang "$@"%"' > /usr/local/bin/ccache-clang
-          echo '#!/bin/bash\nccache clang++ "$@"%"' > /usr/local/bin/ccache-clang++
 
-      # This matches 23.2.8568313, but what happens if we a define specific ndk version in our build?
+      - name: Install SWIG 4.3.1
+        run: bash tools/install-ci-swig.sh
+
       - name: Setup NDK
         uses: nttld/setup-ndk@v1
         with:
-          ndk-version: r23c
+          ndk-version: r27
 
       - name: Setup build cache
         uses: actions/cache@v4
@@ -410,7 +391,7 @@ jobs:
     runs-on: macos-14
     needs: [check-cache, build-jvm-linux-native-lib, build-jvm-windows-native-lib, build-jvm-macos-native-lib]
     env:
-      NDK_VERSION: 23.2.8568313
+      NDK_VERSION: 27.0.12077973
     if: |
       always() &&
       !cancelled() &&
@@ -431,12 +412,8 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          # JVM 17 is required for android-actions/setup-android@v3
-          # Last version will be used and available globally. Other Java versions can be accessed through env variables with such specification as 'JAVA_HOME_{{ MAJOR_VERSION }}_{{ ARCHITECTURE }}'
-          java-version: |
-            17
-            ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -446,12 +423,12 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: ${{ vars.VERSION_CMAKE }}
+          cmake-version: 3.22.1
 
       - name: Setup ninja
         uses: clementetb/setup-ninja@master
         with:
-          version: ${{ vars.VERSION_NINJA  }}
+          version: 1.12.1
 
       - name: Install ccache
         uses: hendrikmuhs/ccache-action@v1.2.13
@@ -459,29 +436,22 @@ jobs:
           key: 'jvm-package'
           max-size: '2.0G'
 
-      - name: Install SWIG
-        run: brew install swig
+      - name: Install SWIG 4.3.1
+        run: bash tools/install-ci-swig.sh
 
       - name: Prepend ccache executables to the PATH
         run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
 
-      # See https://github.com/hendrikmuhs/ccache-action/issues/94
       - name: Configure ccache
         run: |
           ccache --set-config="compiler_check=content"
           ccache --show-config
-          echo '#!/bin/bash\nccache clang "$@"%"' > /usr/local/bin/ccache-clang
-          echo '#!/bin/bash\nccache clang++ "$@"%"' > /usr/local/bin/ccache-clang++
 
       - name: Setup Android SDK
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME_17_ARM64 }}
         uses: android-actions/setup-android@v3
 
       - name: Install NDK
         run: sdkmanager --install "ndk;${{ env.NDK_VERSION }}"
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME_17_ARM64 }}
 
       # We cannot use artifacts as they cannot be shared between workflows, so use cache instead.
       - name: Setup build cache
@@ -528,9 +498,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: check-cache
     env:
-      NDK_VERSION: 23.2.8568313
-    outputs:
-      baas-container-id: ${{ steps.baas_cli_start.outputs.baas_container_id }}
+      NDK_VERSION: 27.0.12077973
     if: |
       always() && !cancelled() &&
       (needs.check-cache.outputs.packages-android-cache-hit != 'true' ||
@@ -550,47 +518,26 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          # JVM 17 is required for android-actions/setup-android@v3
-          # Last version will be used and available globally. Other Java versions can be accessed through env variables with such specification as 'JAVA_HOME_{{ MAJOR_VERSION }}_{{ ARCHITECTURE }}'
-          java-version: |
-            17
-            ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: false
 
-      # Manually install SWIG 4.1.1 as only 4.0.2 is pre-installed
-      # 4.1.1 is not available in apt-get, so use brew instead
-      # We need to use the formulae directly from GitHub to pin the version as Homebrew does not have
-      # all versions available.
-      # https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md#ubuntu-22041-lts
-      # It seems to be required to manually add brew dirs to the PATH. This does not happen automatically.
-      - name: Install SWIG
-        run: |
-          test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)"
-          test -d /home/linuxbrew/.linuxbrew && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          test -r ~/.bash_profile && echo "eval \"\$($(brew --prefix)/bin/brew shellenv)\"" >> ~/.bash_profile
-          echo "eval \"\$($(brew --prefix)/bin/brew shellenv)\"" >> ~/.profile
-          echo "/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
-          echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
-          cd ~
-          curl -L ${{ vars.VERSION_SWIG}} > swig.rb && HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=true brew install swig.rb
-
-      - name: Install JSON parser
-        run: brew install jq
+      - name: Install SWIG 4.3.1
+        run: bash tools/install-ci-swig.sh
 
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: ${{ vars.VERSION_CMAKE }}
+          cmake-version: 3.22.1
 
       - name: Setup ninja
         uses: clementetb/setup-ninja@master
         with:
-          version: ${{ vars.VERSION_NINJA  }}
+          version: 1.12.1
 
       - name: Install ccache
         uses: hendrikmuhs/ccache-action@v1.2.13
@@ -601,22 +548,15 @@ jobs:
       - name: Prepend ccache executables to the PATH
         run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
 
-      # See https://github.com/hendrikmuhs/ccache-action/issues/94
       - name: Configure ccache
         run: |
           ccache --set-config="compiler_check=content"
           ccache --show-config
-          echo '#!/bin/bash\nccache clang "$@"%"' > /usr/local/bin/ccache-clang
-          echo '#!/bin/bash\nccache clang++ "$@"%"' > /usr/local/bin/ccache-clang++
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
 
       - name: Install NDK
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
         run: sdkmanager --install "ndk;${{ env.NDK_VERSION }}"
 
       - name: Build Android Base Test Apk
@@ -667,11 +607,11 @@ jobs:
         with:
           submodules: "recursive"
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -681,12 +621,12 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: ${{ vars.VERSION_CMAKE }}
+          cmake-version: 3.22.1
 
       - name: Setup ninja
         uses: clementetb/setup-ninja@master
         with:
-          version: ${{ vars.VERSION_NINJA  }}
+          version: 1.12.1
 
       - name: Install ccache
         uses: hendrikmuhs/ccache-action@v1.2.13
@@ -694,19 +634,16 @@ jobs:
           key: 'macos-x64-package'
           max-size: '2.0G'
 
-      - name: Install SWIG
-        run: brew install swig
+      - name: Install SWIG 4.3.1
+        run: bash tools/install-ci-swig.sh
 
       - name: Prepend ccache executables to the PATH
         run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
 
-      # See https://github.com/hendrikmuhs/ccache-action/issues/94
       - name: Configure ccache
         run: |
           ccache --set-config="compiler_check=content"
           ccache --show-config
-          echo '#!/bin/bash\nccache clang "$@"%"' > /usr/local/bin/ccache-clang
-          echo '#!/bin/bash\nccache clang++ "$@"%"' > /usr/local/bin/ccache-clang++
 
       - name: Build packages
         working-directory: packages
@@ -743,11 +680,11 @@ jobs:
         with:
           submodules: "recursive"
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -757,12 +694,12 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: ${{ vars.VERSION_CMAKE }}
+          cmake-version: 3.22.1
 
       - name: Setup ninja
         uses: clementetb/setup-ninja@master
         with:
-          version: ${{ vars.VERSION_NINJA  }}
+          version: 1.12.1
 
       - name: Install ccache
         uses: hendrikmuhs/ccache-action@v1.2.13
@@ -770,19 +707,16 @@ jobs:
           key: 'macos-arm64-package'
           max-size: '2.0G'
 
-      - name: Install SWIG
-        run: brew install swig
+      - name: Install SWIG 4.3.1
+        run: bash tools/install-ci-swig.sh
 
       - name: Prepend ccache executables to the PATH
         run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
 
-      # See https://github.com/hendrikmuhs/ccache-action/issues/94
       - name: Configure ccache
         run: |
           ccache --set-config="compiler_check=content"
           ccache --show-config
-          echo '#!/bin/bash\nccache clang "$@"%"' > /usr/local/bin/ccache-clang
-          echo '#!/bin/bash\nccache clang++ "$@"%"' > /usr/local/bin/ccache-clang++
 
       - name: Build packages
         working-directory: packages
@@ -814,11 +748,11 @@ jobs:
         with:
           submodules: "recursive"
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -828,12 +762,12 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: ${{ vars.VERSION_CMAKE }}
+          cmake-version: 3.22.1
 
       - name: Setup ninja
         uses: clementetb/setup-ninja@master
         with:
-          version: ${{ vars.VERSION_NINJA  }}
+          version: 1.12.1
 
       - name: Install ccache
         uses: hendrikmuhs/ccache-action@v1.2.13
@@ -841,19 +775,16 @@ jobs:
           key: 'ios-x64-package'
           max-size: '2.0G'
 
-      - name: Install SWIG
-        run: brew install swig
+      - name: Install SWIG 4.3.1
+        run: bash tools/install-ci-swig.sh
 
       - name: Prepend ccache executables to the PATH
         run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
 
-      # See https://github.com/hendrikmuhs/ccache-action/issues/94
       - name: Configure ccache
         run: |
           ccache --set-config="compiler_check=content"
           ccache --show-config
-          echo '#!/bin/bash\nccache clang "$@"%"' > /usr/local/bin/ccache-clang
-          echo '#!/bin/bash\nccache clang++ "$@"%"' > /usr/local/bin/ccache-clang++
 
       - name: Build packages
         working-directory: packages
@@ -886,11 +817,11 @@ jobs:
         with:
           submodules: "recursive"
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -900,12 +831,12 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2.0.2
         with:
-          cmake-version: ${{ vars.VERSION_CMAKE }}
+          cmake-version: 3.22.1
 
       - name: Setup ninja
         uses: clementetb/setup-ninja@master
         with:
-          version: ${{ vars.VERSION_NINJA  }}
+          version: 1.12.1
 
       - name: Install ccache
         uses: hendrikmuhs/ccache-action@v1.2.13
@@ -913,19 +844,16 @@ jobs:
           key: 'ios-arm64-package'
           max-size: '2.0G'
 
-      - name: Install SWIG
-        run: brew install swig
+      - name: Install SWIG 4.3.1
+        run: bash tools/install-ci-swig.sh
 
       - name: Prepend ccache executables to the PATH
         run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
 
-      # See https://github.com/hendrikmuhs/ccache-action/issues/94
       - name: Configure ccache
         run: |
           ccache --set-config="compiler_check=content"
           ccache --show-config
-          echo '#!/bin/bash\nccache clang "$@"%"' > /usr/local/bin/ccache-clang
-          echo '#!/bin/bash\nccache clang++ "$@"%"' > /usr/local/bin/ccache-clang++
 
       - name: Build packages
         working-directory: packages
@@ -956,7 +884,7 @@ jobs:
           - type: base
             test-title: Unit Test Results - Android Base (Emulator)
 
-    runs-on: macos-12 # android emulator does not run on arm64 - https://github.com/ReactiveCircus/android-emulator-runner/issues/350
+    runs-on: macos-15-intel # android emulator does not run on arm64 - https://github.com/ReactiveCircus/android-emulator-runner/issues/350
     needs: [check-cache, build-android-packages, build-jvm-packages, build-kotlin-metadata-package]
     if: |
       always() &&
@@ -970,11 +898,11 @@ jobs:
         with:
           submodules: "recursive"
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -1007,13 +935,12 @@ jobs:
         with:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          api-level: ${{ vars.VERSION_ANDROID_EMULATOR_API_LEVEL }} # Must be 30 to support aosp_atd
-          target: default
+          api-level: 35
+          target: google_apis
           arch: x86_64
           disk-size: 4096M
           ram-size: 2048M
           heap-size: 1024M
-          channel: canary
           script: |
             adb logcat -c
             adb logcat > logcat.txt &
@@ -1043,10 +970,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-12, macos-14]
+        os: [macos-15-intel, macos-14]
         type: [base]
         include:
-          - os: macos-12
+          - os: macos-15-intel
             type: base
             os-id: macos
             package-prefix: macos-x64
@@ -1071,11 +998,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -1117,10 +1044,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-12, macos-14]
+        os: [macos-15-intel, macos-14]
         type: [base]
         include:
-          - os: macos-12
+          - os: macos-15-intel
             type: base
             package-prefix: x64
             test-title: Unit Test Results - iOS x64 Base
@@ -1145,11 +1072,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3
@@ -1193,10 +1120,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-12, macos-14, ubuntu-latest, windows-latest]
+        os: [macos-15-intel, macos-14, ubuntu-latest, windows-latest]
         type: [base]
         include:
-          - os: macos-12
+          - os: macos-15-intel
             os-id: mac
             type: base
             test-title: Unit Test Results - Base JVM MacOS x64
@@ -1225,11 +1152,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: ${{ vars.VERSION_JAVA_DISTRIBUTION }}
-          java-version: ${{ vars.VERSION_JAVA }}
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle and task/dependency caching
         uses: gradle/actions/setup-gradle@v3

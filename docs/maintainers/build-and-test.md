@@ -137,15 +137,18 @@ local Maven repository and runs tests against those artifacts. The migrated stat
 explicitly select Temurin JDK 17 and CMake 3.22.1; the SDK-scoped root gates have passed in the
 Sharekey workflows on GitHub. This does not establish that every inherited native job is configured.
 
-The remaining upstream pipeline is not a verified Sharekey release pipeline. It still includes
-unverified native consumer builds, old runner selections and repository variables.
-The reusable integration jobs explicitly select Temurin 17. Other inherited jobs still require
-`VERSION_JAVA=17` and `VERSION_JAVA_DISTRIBUTION=temurin`; Java 11 step labels do not reveal the
-variable's actual configured value. `VERSION_CMAKE`, `VERSION_SWIG`, `VERSION_NINJA`,
-`VERSION_JAVA_DISTRIBUTION` and `VERSION_ANDROID_EMULATOR_API_LEVEL` also need deliberate setup.
-An API 24/25 clock/device check and a 16 KB arm64 check serve different purposes in that matrix.
-Inspect repository variables, credentials, runner versions, artifact paths and publish conditions
-before using it for Sharekey releases.
+The inherited PR matrix now pins Temurin 17, CMake 3.22.1, Ninja 1.12.1, SWIG 4.3.1 and NDK
+27.0.12077973 in the repository. It does not require upstream `VERSION_*` repository variables.
+The SWIG installer is shared with the mobile release workflow and verifies the source archive's
+SHA-256. Intel macOS lanes use `macos-15-intel`; Android emulator consumers select API 35
+`google_apis` explicitly. Package cache keys include the workflows and SWIG installer so toolchain
+changes cannot reuse artifacts built with the previous configuration.
+
+The inherited matrix is not the Sharekey release pipeline. Its broader native consumer coverage
+must be verified by a successful run; selecting tool versions is not proof that those targets pass.
+The mobile workflow separately tests API 25 clock compatibility, API 35 instrumentation and R8.
+The API 25 clock/device check and the 16 KB arm64 check serve different purposes. Inspect credentials,
+artifact paths and publish conditions before changing release behavior.
 Markdown-only pull requests are ignored by its PR trigger; documentation checks need a separate path.
 
 The commented `debugMinified` setup in `test-base` is not enabled by simply passing a property.
