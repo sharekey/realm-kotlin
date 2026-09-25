@@ -237,3 +237,12 @@ assertions, disabled bitcode and the previous 10.13 deployment setting. Local Co
 and generation passed with both architectures in the generated project. This local configuration
 check used deployment target 12.0 because Xcode 27 rejects older targets; CI retains the original
 target on Xcode 16.4. It does not count as a completed native build or runtime test.
+
+[PR Build on `50276f96`](https://github.com/sharekey/realm-kotlin/actions/runs/36108481196) passed
+all seven originally failing build jobs, Linux/Windows/macOS JNI builds, JVM tests on all four
+hosts, both macOS-native test lanes, artifact bundling, benchmarks and the current Gradle consumer.
+iOS test binaries linked but could not start because the runner had no device named `iPhone 14`.
+The inherited Intel Mac Android lanes also had emulator boot timeouts and a notification-test
+timeout. The follow-up selects and boots an installed iOS 18 simulator and runs Android tests on
+Linux/KVM, retaining the Gradle consumer JVM/native checks on macOS. No tests or assertions are
+removed. These changed runtime lanes still require a new successful CI run.

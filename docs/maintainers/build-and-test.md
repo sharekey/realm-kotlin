@@ -8,8 +8,9 @@ for executed checks; command examples elsewhere in this guide are not proof that
 Use [Config.kt](../../buildSrc/src/main/kotlin/Config.kt) and the wrappers as the version authority.
 The development build uses Kotlin 2.2.10, Gradle 8.14.3, JDK/JVM target 17, AGP 8.10.0,
 R8 8.10.21, compile/target SDK 35, Build Tools 35.0.0 and NDK 27.0.12077973. Android minimum
-SDK is 21. SWIG 4.2.0+, CMake 3.18.1+ and ccache must be on `PATH`; set `JAVA_HOME`,
-`ANDROID_HOME` and `NDK_HOME`. Apple targets additionally need compatible Xcode/platform tools.
+SDK is 21. SWIG, CMake and ccache must be on `PATH`; set `JAVA_HOME`, `ANDROID_HOME` and
+`NDK_HOME`. CI pins SWIG 4.3.1 and CMake 3.22.1 for JNI/Android; Kotlin/Native Apple builds
+use CMake 3.31.6 and Xcode 16.4. Use those Apple versions when reproducing native CI failures.
 `buildSrc` uses Gradle's embedded Kotlin compiler; SDK/compiler-plugin sources use `Versions.kotlin`.
 
 From the repository root, prepare the **pinned** Core revision:
@@ -149,6 +150,12 @@ SHA-256. Intel macOS lanes use `macos-15-intel`; Android emulator consumers sele
 `google_apis` explicitly. Android setup requests `platform-tools` explicitly because the action's
 legacy default also requests the removed `tools` package. Package cache keys include the workflows
 and SWIG installer so toolchain changes cannot reuse artifacts built with the previous configuration.
+
+Android device jobs run on Ubuntu 24.04 with KVM and the same pinned emulator action as the mobile
+release workflow. Gradle consumer checks split each fixture between Android instrumentation on
+Linux and JVM/macOS-native tests on Intel macOS; all three platforms remain covered. iOS test
+jobs select an available iOS 18 iPhone simulator, boot it and pass its UDID with `-PiosDevice=...`.
+The local default device name is only a convenience and must exist on the developer's machine.
 
 The inherited matrix is not the Sharekey release pipeline. Its broader native consumer coverage
 must be verified by a successful run; selecting tool versions is not proof that those targets pass.
